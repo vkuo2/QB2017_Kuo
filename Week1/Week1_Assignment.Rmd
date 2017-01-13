@@ -1,6 +1,6 @@
 ---
 title: "Week 1 Assignment: Basic R"
-author: "Student Name; Z620: Quantitative Biodiversity, Indiana University"
+author: "Venus Kuo; Z620: Quantitative Biodiversity, Indiana University"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
 geometry: margin=2.54cm
@@ -49,8 +49,9 @@ In the R code chunk below, please provide the code to:
 3) set your working directory to your Week1 folder. 
 
 ```{r}
-
-
+rm(list=ls())
+getwd()
+setwd("~/GitHub/QB2017_Kuo/Week1/")
 
 ```
 
@@ -65,10 +66,25 @@ Feel free to reference the Week 0 handout.
 4) the log (base e) of your favorite number.
 
 ```{r}
+# 1
+l <- 5
+cube.vol <- l^3
+cube.vol # 125 #
 
+# 2
+r <- 2 
+circle.area <- pi*r^2
+circle.area # 12.56....#
 
+# 3
+theta <- pi/4
+hypothenuse <- sqrt(2)
+opposite <- hypothenuse/sin(theta)
+opposite # 2 #
 
-
+# 4
+Fav.log <- log(10)
+Fav.log # 2.3....#
 ```
 
 ## 4) WORKING WITH VECTORS
@@ -84,9 +100,16 @@ In the R code chunk below, do the following:
 3) Add `x` and `w` and divide by 15.
 
 ```{r}
+# 1 # 
+x <- c(1:5)
 
+# 2 #
+w <- x*14
+w
 
-
+#3 #
+c <- (x+w)/15
+c # 1,2,3,4,5 # 
 ```
 
 Now, do the following: 
@@ -95,9 +118,15 @@ Now, do the following:
 3) Use the combine function to create one more vector, `d` that consists of any three elements from `w` and any four elements of `k`.
 
 ```{r}
+# 1 #
+k <- vector(length = length(w))
 
+# 2 #
+k*x
 
-
+# 3 #
+d <- c(w[1:3],k[1:4]) 
+d
 ```
 
 ### Summary Statistics of Vectors
@@ -107,16 +136,18 @@ In the R code chunk below, calculate the **summary statistics** (i.e., maximum, 
 ```{r}
 v <- c(16.4, 16.0, 10.1, 16.8, 20.5, NA, 20.2, 13.1, 24.8, 20.2, 25.0, 20.5, 30.5, 31.4, 27.1)
 
+max(v)
+min(v)
+sum(v)
+sum(v)
+mean(v)
+median(v)
+var(v)
+sd(v)
 
-
-
-
-
-
-
-
-
-
+sem <- function(x) {
+  sd(na.omit(x))/sqrt(length(na.omit(x)))
+}
 
 
 ```
