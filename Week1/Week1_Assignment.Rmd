@@ -413,15 +413,34 @@ The remaining columns of data refer to the biomass (µg/L) of different zooplank
 ***Question 9***: With the visualization and statistical tools that we learned about in the Week 1 Handout, use the site-by-species matrix to assess whether and how different zooplankton taxa were responsible for the total biomass (ZP) response to nutrient enrichment. Describe what you learned below in the "Answer" section and include appropriate code in the R chunk.
 
 ```{r}
+# Read zoop data set 
 zoop <- read.table("data/zoops.txt", sep="\t", header=TRUE)
+# Making a site-by-species matrix
 zoop.num <- zoop[,3:9]
+# Summing across rows
+Row.sums <- rowSums(zoop.num)
+Row.sums
+
+zoop.num.total <- cbind(zoop.num, Row.sums)
+zoop.num.total
+
+barplot(as.matrix(zoop.num)) # Not sure if I did this right but it definitely shows SIMO dominating across sites
+
+
+NUTS <-factor(zoop$NUTS, levels=c('L', 'M', 'H'))
+
+# Taking the average of taxas across nutrient treatments
+taxa.means <- by(zoop[,3:9], NUTS, FUN=colMeans)
+taxa.means <- aggregate(zoop[,3:9],by=list(NUTS), mean)
+taxa.means.num <- taxa.means[,2:8]
+taxa.means
 
 
 
 ```
 
 ****Answer 9****
-# 
+# I am not sure if I did this correctly. By taking the sum of taxa biomass across sites, I was able tell that the SIMO taxa dominated the biomass across most sites, while BOSM and NAUP biomass were negligable. The same is true across nutrient levels, although biomass was more evenly distrubted among multiple taxas in the Low nutrient treatment, while SIMO dominated in high nutrient treatments.   
 
 ## SUBMITTING YOUR ASSIGNMENT
 Use Knitr to create a PDF of your completed Week1_Assignment.Rmd document, push the repo to GitHub, and create a pull request.

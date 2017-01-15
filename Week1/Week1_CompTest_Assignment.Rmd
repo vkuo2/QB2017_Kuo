@@ -1,6 +1,6 @@
 ---
 title: "Week 1 Assignment: R Test"
-author: "Student Name"
+author: "Venus Kuo"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
 ---
@@ -24,13 +24,13 @@ It is due on **January 18^th^, 2015 at Noon**.
 
     Ex. Print "*Hello, World!*"
 ```{r}
-
+print("Hello, World!")
 
 ```
 
     Now, print your own statement
 ```{r}
-
+print("Microbial Seed Banks")
 
 ```
 
@@ -39,12 +39,12 @@ It is due on **January 18^th^, 2015 at Noon**.
 **Do Not Modify This Part**
 
 ```{r}
-info <- unname(c(Sys.info()[6],
-          .Platform$OS.type,
-          Sys.info()[1:2],
-          R.version.string,
-          .Platform$GUI,
-          system("git --version", intern = TRUE)))
-info
+# info <- unname(c(Sys.info()[6],
+#          .Platform$OS.type,
+#          Sys.info()[1:2],
+#          R.version.string,
+#          .Platform$GUI,
+#          system("git --version", intern = TRUE)))
+#info
 ```
 
