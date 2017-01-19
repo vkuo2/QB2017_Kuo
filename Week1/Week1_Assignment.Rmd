@@ -1,6 +1,6 @@
 ---
 title: "Week 1 Assignment: Basic R"
-author: "Student Name; Z620: Quantitative Biodiversity, Indiana University"
+author: "Venus Kuo; Z620: Quantitative Biodiversity, Indiana University"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
 geometry: margin=2.54cm
@@ -49,8 +49,9 @@ In the R code chunk below, please provide the code to:
 3) set your working directory to your Week1 folder. 
 
 ```{r}
-
-
+rm(list=ls())
+getwd()
+setwd("C:/Users/Venus/Github/QB2017_Kuo/Week1/")
 
 ```
 
@@ -65,10 +66,25 @@ Feel free to reference the Week 0 handout.
 4) the log (base e) of your favorite number.
 
 ```{r}
+# 1
+l <- 5
+cube.vol <- l^3
+cube.vol # 125 #
 
+# 2
+r <- 2 
+circle.area <- pi*r^2
+circle.area # 12.56....#
 
+# 3
+theta <- pi/4
+hypothenuse <- sqrt(2)
+opposite <- hypothenuse/sin(theta)
+opposite # 2 #
 
-
+# 4
+Fav.log <- log(10)
+Fav.log # 2.3....#
 ```
 
 ## 4) WORKING WITH VECTORS
@@ -84,9 +100,16 @@ In the R code chunk below, do the following:
 3) Add `x` and `w` and divide by 15.
 
 ```{r}
+# 1 # 
+x <- c(1:5)
 
+# 2 #
+w <- x*14
+w
 
-
+#3 #
+c <- (x+w)/15
+c # 1,2,3,4,5 # 
 ```
 
 Now, do the following: 
@@ -95,9 +118,15 @@ Now, do the following:
 3) Use the combine function to create one more vector, `d` that consists of any three elements from `w` and any four elements of `k`.
 
 ```{r}
+# 1 #
+k <- vector(length = length(w))
 
+# 2 #
+k*x
 
-
+# 3 #
+d <- c(w[1:3],k[1:4]) 
+d
 ```
 
 ### Summary Statistics of Vectors
@@ -107,17 +136,22 @@ In the R code chunk below, calculate the **summary statistics** (i.e., maximum, 
 ```{r}
 v <- c(16.4, 16.0, 10.1, 16.8, 20.5, NA, 20.2, 13.1, 24.8, 20.2, 25.0, 20.5, 30.5, 31.4, 27.1)
 
+v <- na.omit(v)
 
+max(v)
+min(v)
+sum(v)
+sum(v)
+mean(v)
+median(v)
+var(v)
+sd(v)
 
+sem <- function(x) {
+  sd(na.omit(x))/sqrt(length(na.omit(x)))
+}
 
-
-
-
-
-
-
-
-
+sem(v)
 
 ```
 
@@ -130,9 +164,10 @@ Make the mean of the first column equal to 8 with a standard deviation of 2 and 
 
 ```{r}
 
-
-
-
+j <- c(rnorm(5, mean=8, sd=2))
+z <- c(rnorm(5, mean=25, sd=10))
+l <- matrix(cbind(z,j), nrow=5, ncol=2, byrow=FALSE)
+dim(l)
 
 ```
 
@@ -141,7 +176,8 @@ What do the arguments in this function specify?
 Remember to use `help()` or type `?rnorm`.
 
 > Answer 1:
-
+# the rnorm function generates random numbers under a normal distribution with means and standard deviation defined #
+# n = the number of observations, mean = vector of means, sd = vector of standard deviations #
 
 In the R code chunk below, do the following: 
 1) Load `matrix.txt` from the Week1 data folder as matrix `m`.
@@ -149,8 +185,9 @@ In the R code chunk below, do the following:
 3) Determine the dimensions of the transposed matrix.
 
 ```{r}
-
-
+m <- as.matrix(read.table("data/matrix.txt", sep="\t", header=FALSE))
+n <- t(m)
+dim(n)
 
 ```
 
@@ -158,7 +195,7 @@ In the R code chunk below, do the following:
 ***Question 2***: What are the dimensions of the matrix you just transposed?
 
 > Answer 2:
-
+# m is 10 columns and 5 rows and n is 5 columns and 10 columns #
 
 ###Indexing a Matrix
 
@@ -167,14 +204,15 @@ In the R code chunk below, do the following:
 2) Remove the last row of matrix `m`.
 
 ```{r}
-
+m[,-3]
+m <- m[-10,]
 
 ```
 
 ***Question 3***: Describe what we just did in the last series of indexing steps.
 
 > ***Answer 3***:
-
+# I indexed the m matrix to not include the 10th row and then I replaced it as the actual m matrix, removing the row #
 
 ## 6) BASIC DATA VISUALIZATION AND STATISTICAL ANALYSIS
 ### Load Zooplankton Dataset
@@ -185,6 +223,8 @@ In the R code chunk below, do the following:
 
 ```{r}
 
+meso <- read.table("data/zoop_nuts.txt", sep="\t", header=TRUE)
+str(meso)
 
 ```
 
@@ -196,15 +236,17 @@ In the R code chunk below, do the following:
 3) Conduct a simple **Pearson's correlation** analysis.
 
 ```{r}
-
-
+meso.num <- meso[, 3:8]
+pairs(meso.num)
+cor1 <- cor(meso.num)
+cor1
 ```
 
 
 ***Question 4***: Describe some of the general features based on the visualization and correlation analysis above?
 
 > Answer 4:
-
+# There is high correlation between factors like TN, ZP, and SRP with TIN. There are also negative correlations between factors like CHLA and all other nutrient (N/P) concentrations #
 
 In the R code chunk below, do the following:
 1) Redo the correlation analysis using the `corr.test()` function in the `psych` package with the following options: method = "pearson", adjust = "BH".
@@ -212,7 +254,13 @@ In the R code chunk below, do the following:
 3) Use the print command from the handout to see the results of each correlation analysis.
 
 ```{r}
+# install.packages("psych", repos = "https://cran.rstudio.com/")
+require("psych")
+cor2 <- corr.test(meso.num, method="pearson", adjust="BH")
+print(cor2, digits=3)
 
+cor3 <- corr.test(meso.num, method="kendall", adjust="BH")
+print(cor3, digits=3)
 
 
 ```
@@ -224,12 +272,15 @@ When should one use non-parametric methods instead of parametric methods?
 With the Pearson's method, is there evidence for false discovery rate due to multiple comparisons? Why is false discovery rate important?
 
 > ***Answer 5***: 
-
+# The results seem to be fairly sensitive to parametric (Pearson's) method because the non-parametric method gave generally higher corrected p-values from the BH statement. Generally, you should use a non-parametric method when the dataset does not follow a particular, normal for example, distribution. It is possible to have correlations when considering many sub sets of data in a multiple comparisons, and those correlations may not be true (false discovery rate).
 
 In the R code chunk below, use the `corrplot` function in the *corrplot* package to produce the ellipse correlation plot in the handout.
 
 ```{r}
-
+# install.packages("corrplot", repos="http://cran.rstudio.com/")
+require("corrplot")
+corrplot(cor1, method="ellipse")
+dev.off()
 
 ```
 
@@ -242,10 +293,20 @@ In the R code chunk below, do the following:
 
 ```{r}
 
+fitreg <- lm(ZP~TN, data=meso)
+summary(fitreg)
+plot(meso$TN, meso$ZP, ylim=c(0,10), xlim=c(500,5000),
+     xlab=expression(paste("Total Nitrogen (",mu,"g/L)")),
+     ylab="Zooplankton Biomass (mg/L)", las=1)
+text(meso$TN, meso$ZP, meso$NUTS, pos=3, cex=0.8)
+text(meso$TN, meso$ZP, meso$NUTS, pos=3, cex=0.8)
+newTN <- seq(min(meso$TN), max(meso$TN), 10)
+regline <- predict(fitreg, newdata=data.frame(TN=newTN))
+lines(newTN, regline)
 
-
-
-
+conf95 <- predict(fitreg, newdata=data.frame(TN=newTN),
+                  interval=c("confidence"), level=0.95, type="response")
+matlines(newTN, conf95[, c("lwr", "upr")], type="l", lty=2, lwd=1, col="black")
 
 
 ```
@@ -253,23 +314,27 @@ In the R code chunk below, do the following:
 ***Question 6***: Interpret the results from the regression model
 
 > ***Answer 6***:
-
+# The r-squared value is 0.5525 and the p-value is highly significant***. Zooplankton biomass is highly correlated with total nitrogen. 
 
 
 ***Question 7***: Explain what the `predict()` function is doing in our analyses.
 
 > ***Answer 7***:
+# The predict() is a function used for predicting the results of various model fitting functions. 
 
 Using the R code chunk below, use the code provided in the handout to determine if our data meet the assumptions of the linear regression analysis. 
 
 ```{r}
+par(mfrow=c(2,2), mar=c(5.1, 4.1, 4.1, 2.1))
+plot(fitreg)
+
 
 ```
 
-+ Upper left: is there a random distribution of the residuals around zero (horizontal line)?
-+ Upper right: is there a reasonably linear relationship between standardized residuals and theoretical quantiles? Try `help(qqplot)`
-+ Bottom left: again, looking for a random distribution of sqrt(standardized residuals)
-+ Bottom right: leverage indicates the influence of points; contours correspond with Cook's distance, where values > |1| are "suspicious"
++ Upper left: is there a random distribution of the residuals around zero (horizontal line)? #Yes
++ Upper right: is there a reasonably linear relationship between standardized residuals and theoretical quantiles? Try `help(qqplot)` #Yes
++ Bottom left: again, looking for a random distribution of sqrt(standardized residuals) # Not random distribution
++ Bottom right: leverage indicates the influence of points; contours correspond with Cook's distance, where values > |1| are "suspicious" 
 
 ### Analysis of Variance (ANOVA)
 
@@ -282,10 +347,28 @@ Using the R code chunk below, do the following:
 
 ```{r}
 
+NUTS <-factor(meso$NUTS, levels=c('L', 'M', 'H'))
 
+zp.means <- tapply(meso$ZP, NUTS, mean)
+sem <- function(x){
+  sd(na.omit(x))/sqrt(length(na.omit(x)))
+}
 
+zp.sem <- tapply(meso$ZP, NUTS, sem)
 
+bp <- barplot(zp.means, ylim=c(0, round(max(meso$ZP), digits=0)),
+              pch=15, cex=1.25, las=1, cex.lab=1.4, cex.axis=1.25,
+              xlab="nutrient supply", ylab="zooplankton biomass (mg/L)",
+              names.arg=c("low", "medium", "high"))
 
+arrows(x0=bp, y0=zp.means, y1=zp.means-zp.sem, angle=90,
+       length=0.1, lwd=1)
+arrows(x0=bp, y0=zp.means, y1=zp.means+zp.sem, angle=90,
+       length=0.1, lwd=1)
+
+fitanova <- aov(ZP~NUTS, data=meso)
+summary(fitanova)
+TukeyHSD(fitanova)
 
 
 ```
@@ -294,12 +377,13 @@ Using the R code chunk below, do the following:
 Do you have any concerns about this analysis?
 
 > ***Answer 8***:
-
+# The nutrient supply to zoplankton biomass is significant in both ANOVA and regression tests, although the linear regression test gave a stronger significance. This ANOVA analysis seems to be less powerful of a test than the linear regression test. 
 
 Using the R code chunk below, use the diagnostic code provided in the handout to determine if our data meet the assumptions of ANVOA (similar to regression). 
 
 ```{r}
-
+par(mfrow=c(2,2), mar=c(5.1,4.1,4.1,2.1))
+plot(fitanova)
 ```
 
 ## SYNTHESIS: SITE-BY-SPECIES MATRIX
@@ -329,11 +413,34 @@ The remaining columns of data refer to the biomass (µg/L) of different zooplank
 ***Question 9***: With the visualization and statistical tools that we learned about in the Week 1 Handout, use the site-by-species matrix to assess whether and how different zooplankton taxa were responsible for the total biomass (ZP) response to nutrient enrichment. Describe what you learned below in the "Answer" section and include appropriate code in the R chunk.
 
 ```{r}
+# Read zoop data set 
+zoop <- read.table("data/zoops.txt", sep="\t", header=TRUE)
+# Making a site-by-species matrix
+zoop.num <- zoop[,3:9]
+# Summing across rows
+Row.sums <- rowSums(zoop.num)
+Row.sums
 
+zoop.num.total <- cbind(zoop.num, Row.sums)
+zoop.num.total
+
+barplot(as.matrix(zoop.num)) # Not sure if I did this right but it definitely shows SIMO dominating across sites
+
+
+NUTS <-factor(zoop$NUTS, levels=c('L', 'M', 'H'))
+
+# Taking the average of taxas across nutrient treatments
+taxa.means <- by(zoop[,3:9], NUTS, FUN=colMeans)
+taxa.means <- aggregate(zoop[,3:9],by=list(NUTS), mean)
+taxa.means.num <- taxa.means[,2:8]
+taxa.means
 
 
 
 ```
+
+****Answer 9****
+# I am not sure if I did this correctly. By taking the sum of taxa biomass across sites, I was able tell that the SIMO taxa dominated the biomass across most sites, while BOSM and NAUP biomass were negligable. The same is true across nutrient levels, although biomass was more evenly distrubted among multiple taxas in the Low nutrient treatment, while SIMO dominated in high nutrient treatments.   
 
 ## SUBMITTING YOUR ASSIGNMENT
 Use Knitr to create a PDF of your completed Week1_Assignment.Rmd document, push the repo to GitHub, and create a pull request.
