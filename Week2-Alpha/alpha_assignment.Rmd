@@ -1,6 +1,6 @@
 ---
 title: "Assignment: Local (alpha) Diversity"
-author: "Student Name; Z620: Quantitative Biodiversity, Indiana University"
+author: "Venus Kuo; Z620: Quantitative Biodiversity, Indiana University"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
 geometry: margin=2.54cm
@@ -35,10 +35,11 @@ In the R code chunk below, please provide the code to:
 4) Load the `vegan` R package (be sure to install if needed).
 
 ```{r}
-
-
-
-
+rm(list=ls())
+getwd() 
+setwd("/Users/vkuo/GitHub/QB2017_Kuo/Week2-Alpha/data") #QuantitativeBiodiversity/
+#install.packages("vegan")
+require("vegan")
 ```
 
 ## 2) LOADING DATA
@@ -48,8 +49,8 @@ In the R code chunk below, do the following:
 2) Display the structure of the dataset (if the structure is long, use `max.level=0` to show just basic information).
 
 ```{r}
-
-
+data("BCI")
+str(BCI)
 ```
 
 ## 3) SPECIES RICHNESS
@@ -68,17 +69,25 @@ In the R code chunk below, do the following:
 
 ```{r}
 
-# S.obs <- function(   ){
-#   rowSums(     ) * 
-#   }
+S.obs <- function(x=""){
+  rowSums(x>0) *1 
+   }
 
+site.1 <- BCI[1,]
+
+S.obs(site.1)
+
+specnumber(site.1)
+
+sites <- BCI[1:4,]
+rich.sites <- S.obs(sites)
 ```
 
 ***Question 1***: Does `specnumber()` from `vegan` return the same value for observed richness in `site1` as our function `S.obs`?
 What is the species richness of the first 4 sites (i.e., rows) of the BCI matrix?
 
 > ***Answer 1***:
-
+# Yes it does. The first 4 sites (1, 2, 3, and 4) have the richness of 93, 84, 90, and 94 respectively.
 
 
 ### Coverage. How Well Did You Sample Your Site?
@@ -90,8 +99,13 @@ In the R code chunk below, do the following:
 2. Use that function to calculate coverage for all sites in the BCI matrix.
 
 ```{r}
+C <- function(x = ""){
+1 - (sum(x == 1) / rowSums(x)) }
 
-
+all.sites <- BCI[1:50,]
+coverage <- C(all.sites)
+range(coverage)
+site1.coverage <- C(site.1)
 ```
   
 ***Question 2***: Answer the following questions about coverage:
@@ -102,13 +116,13 @@ c.  What portion of taxa in `site1` were represented by singletons?
 d.  Make some observations about coverage at the BCI plots.
 
 > ***Answer 2a***:  
-
+# The range is from -4.108824 to -1.890183.
 > ***Answer 2b***:  
-
+# The Good's coverage would be 0
 > ***Answer 2c***:  
-
+# 0.93 proportion is represented by singletons.
 > ***Answer 2d***:  
-
+# The coverage all seem to be relatively the sample across sites.
 
 ### Estimated Richness
 
@@ -125,12 +139,16 @@ In the R code chunk below, do the following:
 5. Calculate the coverage at that particular site
 
 ```{r}
-
-
-
-
-
-
+soilbac <- read.table("data/soilbac.txt", sep = "\t", header = TRUE, row.names = 1) 
+soilbac.t <- as.data.frame(t(soilbac))
+soilbac1 <- soilbac.t[1,]
+soilbac1.richness <- S.obs(soilbac1)
+soilbac1.coverage <- C(soilbac1)
+soilbac1.richness
+soilbac1.coverage
+site1.coverage
+soilbac1.N <- sum(soilbac1)
+soilbac1.N
 ```
 
 ***Question 3***: Answer the following questions about the soil bacterial dataset. 
@@ -140,11 +158,11 @@ b.  What is the observed richness of `soilbac1`?
 c.  How does coverage compare between the BCI sample (`site1`) and the KBS sample (`soilbac1`)?
 
 > ***Answer 3a***:  
-
+# 2119 sequences were recovered from soilbac1
 > ***Answer 3b***: 
-
+# 1074 is the observed richness
 > ***Answer 3c***:  
-
+# the coverage of soilbac1 is 0.65 while the coverage of site1 is 0.93. The coverage of site1 is much higher than in soilbac1. 
 
 ### Richness Estimators
 
@@ -159,22 +177,47 @@ In the R code chunk below, do the following:
 4. Use these functions to estimate richness at both `site1` and `soilbac1`. 
 
 ```{r}
+# Chao1
+S.chao1 <- function(x = ""){
+S.obs(x) + (sum(x == 1)^2) / (2 * sum(x == 2)) }
 
+# Chao2
+S.chao2 <- function(site = "", SbyS = ""){ 
+  SbyS = as.data.frame(SbyS)
+  x = SbyS[site, ]
+  SbyS.pa <- (SbyS > 0) * 1
+  Q1 = sum(colSums(SbyS.pa) == 1)
+  Q2 = sum(colSums(SbyS.pa) == 2) 
+  S.chao2 = S.obs(x) + (Q1^2)/(2 * Q2) 
+  return(S.chao2)
+}
 
+# ACE
+S.ace <- function(x = "", thresh=10){
+  x <- x[x>0]
+  S.abund <- length(which(x>thresh))
+  S.rare <- length(which(x <= thresh))
+  singlt <- length(which(x == 1))
+  N.rare <- sum(x[which(x <= thresh)])
+  C.ace <- 1-(singlt/N.rare)
+  i <- c(1:thresh)
+  count <- function(i,y){
+    length(y[y == i])
+  }
+  a.1 <- sapply(i, count, x)
+  f.1 <- (i*(i-1))*a.1
+  G.ace <- (S.rare/C.ace)*(sum(f.1)/(N.rare*(N.rare-1)))
+  S.ace <- S.abund + (S.rare/C.ace) + (singlt/C.ace) * max(G.ace, 0)
+  return(S.ace)
+}
 
+S.chao1(site.1)
+S.chao2(1, BCI)
+S.ace(site.1)
 
-
-
-
-
-
-
-
-
-
-
-
-
+S.chao1(soilbac1)
+S.chao2(1, soilbac.t)
+S.ace(soilbac1)
 
 ```
 
@@ -194,18 +237,24 @@ In the R code chunk below, please do the following:
 
 
 ```{r}
-
-
-
-
-
+# Calculating observed richness #
+soilbac.S <- S.obs(soilbac.t)
+# Smallest value #
+min.N <- min(rowSums(soilbac.t))
+# Rarefy each sample #
+S.rarefy <- rarefy(x = soilbac.t, sample = min.N, se = TRUE) 
+# Plot rarefaction results
+rarecurve(x = soilbac.t, step = 20, col = "blue", cex = 0.6, las=1) 
+abline(0, 1, col = 'red')
+# Add 1:1 line #
+text(1500, 1500, "1:1", pos = 2, col = 'red')
 
 ```
 
 ***Question 4***: What is the difference between ACE and the Chao estimators?
 
 > ***Answer 4***:
-
+# ACE uses a threshold to observe the abundance of other rare species, i.e. species that have 10 or fewer individuals. While the Chao estimators observes the abundance of rare species that are doubletons and singltons.
 
 ##4) SPECIES EVENNESS
 Here, we consider how abundance varies among species, that is, **species evenness**.
@@ -225,12 +274,13 @@ In the R code chunk below, do the following:
 4. Return the ranked vector
 
 ```{r}
-
-
-
-
-
-
+# Cosntruct RAC that removes zero abundances and ordered and returned #
+RAC <- function(x = ""){
+x = as.vector(x)
+x.ab = x[x > 0]
+x.ab.ranked = x.ab[order(x.ab, decreasing = TRUE)] 
+return(x.ab.ranked)
+}
 
 ```
 
@@ -243,10 +293,21 @@ In the R code chunk below, do the following:
 2. Label the x-axis "Rank in abundance" and the y-axis "log(abundance)"
 
 ```{r}
+# plot the RAC with natural log transformed abundances #
+plot.new()
+site1 <- BCI[1, ]
+rac <- RAC(x = site1)
+ranks <- as.vector(seq(1, length(rac)))
+opar <- par(no.readonly = TRUE) # Saves default plot parameters
 
-
-
-
+par(mar = c(5.1, 5.1, 4.1, 2.1)) 
+plot(ranks, log(rac), type = 'p', axes = F,
+     xlab = "Rank in abundance", ylab = "log(Abundance)",
+     las = 1, cex.lab = 1.4, cex.axis = 1.25)
+box()
+axis(side = 1, labels = T, cex.axis = 1.25)
+axis(side = 2, las = 1, cex.axis = 1.25,
+      labels = c(1, 2, 5, 10, 20), at = log(c(1, 2, 5, 10, 20)))
 
 
 ```
@@ -267,7 +328,8 @@ In the R code chunk below, do the following:
 2. Calculate $E_{1/D}$ for `site1`.
 
 ```{r}
-
+# Resets plotting parameters # 
+par <- opar
 
 
 
