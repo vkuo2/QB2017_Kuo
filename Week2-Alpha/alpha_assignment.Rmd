@@ -37,7 +37,7 @@ In the R code chunk below, please provide the code to:
 ```{r}
 rm(list=ls())
 getwd() 
-setwd("/Users/vkuo/GitHub/QB2017_Kuo/Week2-Alpha/data") #QuantitativeBiodiversity/
+setwd("C:/Users/Venus/Github/QB2017_Kuo/Week2-Alpha/data/") #QuantitativeBiodiversity/
 #install.packages("vegan")
 require("vegan")
 ```
@@ -118,11 +118,11 @@ d.  Make some observations about coverage at the BCI plots.
 > ***Answer 2a***:  
 # The range is from -4.108824 to -1.890183.
 > ***Answer 2b***:  
-# The Good's coverage would be 0
+# The Good's coverage would be 0.
 > ***Answer 2c***:  
 # 0.93 proportion is represented by singletons.
 > ***Answer 2d***:  
-# The coverage all seem to be relatively the sample across sites.
+# The coverage all seem to be relatively the same across sites. So the coverage across sites are comparable. 
 
 ### Estimated Richness
 
@@ -144,10 +144,10 @@ soilbac.t <- as.data.frame(t(soilbac))
 soilbac1 <- soilbac.t[1,]
 soilbac1.richness <- S.obs(soilbac1)
 soilbac1.coverage <- C(soilbac1)
+soilbac1.N <- sum(soilbac1)
 soilbac1.richness
 soilbac1.coverage
 site1.coverage
-soilbac1.N <- sum(soilbac1)
 soilbac1.N
 ```
 
@@ -254,7 +254,7 @@ text(1500, 1500, "1:1", pos = 2, col = 'red')
 ***Question 4***: What is the difference between ACE and the Chao estimators?
 
 > ***Answer 4***:
-# ACE uses a threshold to observe the abundance of other rare species, i.e. species that have 10 or fewer individuals. While the Chao estimators observes the abundance of rare species that are doubletons and singltons.
+# ACE uses a threshold to observe the abundance of other rare species, i.e. species that have 10 or fewer individuals. While the Chao estimators observes the abundance of rare species that are doubletons and singltons. Moreover, ACE, like Chao1 estimator, estimates richess from one sample, while Chao2 estimates richness across sites . 
 
 ##4) SPECIES EVENNESS
 Here, we consider how abundance varies among species, that is, **species evenness**.
@@ -315,7 +315,7 @@ axis(side = 2, las = 1, cex.axis = 1.25,
 ***Question 5***: What effect does visualizing species abundance data on a log-scaled axis have on how we interpret evenness in the RAC?
 
 > ***Answer 5***:
-
+# The RAC clearly shows that species abundance is quite uneven, as indicated by the higher number of species singletons and doubletons.  
 
 Now that we have visualized unevennes, it is time to quantify it using Simpson's evenness ($E_{1/D}$) and Smith and Wilson's evenness index ($E_{var}$).
 
@@ -331,10 +331,16 @@ In the R code chunk below, do the following:
 # Resets plotting parameters # 
 par <- opar
 
+# Simpson's eveness index #
+SimpE <- function(x = ""){
+  S <- S.obs(x)
+  x = as.data.frame(x)
+  D <- diversity(x, "inv")
+  E <- (D)/S
+  return(E)
+}
 
-
-
-
+SimpE(site1)
 
 
 ```
@@ -350,11 +356,14 @@ In the R code chunk below, please do the following:
 3. Compare $E_{1/D}$ and $E_{var}$.
 
 ```{r}
+# Smith and Wilson's evenness index #
+Evar <- function(x){
+x <- as.vector(x[x > 0])
+1 - (2/pi)*atan(var(log(x)))
+}
 
-
-
-
-
+Evar(site1)
+SimpE(site1)
 
 ```
 
@@ -362,7 +371,7 @@ In the R code chunk below, please do the following:
 Do they agree? If so, why? If not, why? What can you infer from the results.
 
 > ***Answer 6***:
-
+# Smith and Wilson's evenness index gave a value of 0.5 and the Simpson's evenness index gave a value of 0.42 for site1. I would think that they agree becuase both even index values were roughly 50%. I can infer that site1 species distribution was quite even. 
 
 ##5) INTEGRATING RICHNESS AND EVENNESS: DIVERSITY METRICS
 
@@ -379,12 +388,22 @@ In the R code chunk below, please do the following:
 2. Compare this estimate with the output of `vegan`'s diversity function using method = "shannon".
 
 ```{r}
+# Shannon's diversity #
+ShanH <- function(x = ""){
+  H = 0
+  for (n_i in x){
+    if(n_i > 0) {
+      p = n_i / sum(x)
+      H = H - p*log(p)
+    }
+  }
+  return(H)
+}
 
+ShanH(site1)
 
-
-
-
-
+# Vegan package of shannon #
+diversity(site1, index="shannon")
 
 
 
@@ -401,17 +420,23 @@ In the R code chunk below, please do the following:
 2. Compare this estimate with the output of `vegan's` diversity function using method = "simp".
 
 ```{r}
+# Simpson's Diversity #
+SimpD <- function(x = ""){
+  D = 0
+  N = sum(x)
+  for (n_i in x){
+    D = D + (n_i^2)/(N^2)
+  }
+  return(D)
+}
 
+# Calculating the inverse and 1-D #
+D.inv <- 1/SimpD(site1)
+D.sub <- 1-SimpD(site1)
 
-
-
-
-
-
-
-
-
-
+# Comparing the estimates with vegan diversity function #
+diversity(site1, "inv")
+diversity(site1, "simp")
 
 
 ```
@@ -420,6 +445,7 @@ In the R code chunk below, please do the following:
 Do they agree? If so, why? If not, why? What can you infer from the results.
 
 > ***Answer 7***:
+# The evenness value for site 1 using the Evar is 0.5 while the value of shannon diversity index E(H') is 39.415. They do not agree. 
 
 ### Fisher's $\boldsymbol\alpha$
 
@@ -431,23 +457,23 @@ In the R code chunk below, please do the following:
 
 ```{r}
 
+# Calculating Fisher's #
+rac <- as.vector(site1[site1 > 0])
+invD <- diversity(rac, "inv")
+invD
 
-
-
-
-
-
-
-
-
-
-
+# Fisher's for site1 #
+Fisher <- fisher.alpha(rac)
+Fisher
+Evar(site1)
 
 ```
 
 ***Question 8***: How is Fisher's $\boldsymbol\alpha$ different from $E_{H'}$ and $E_{var}$? What does Fisher's $\boldsymbol\alpha$ take into account that $E_{H'}$ and $E_{var}$ do not?
 
 > ***Answer 8***:
+# Fishers is different than the Simpson's diversity and evenness index because Fisher's alpha estimates diversity instead of simply just calculating diversity.
+
 
 ##6) MOVING BEYOND UNIVARIATE METRICS OF $\alpha$ DIVERSITY
 
@@ -471,10 +497,13 @@ In the R code chunk below, please do the following:
 3. Plot the results of the `radfit()` function using the code provided in the handout.
 
 ```{r}
+# Use radfit() #
+RACresults <- radfit(site1)
+RACresults
 
-
-
-
+# Plot results of the radfit #
+plot.new()
+plot(RACresults, las = 1, cex.lab = 1.4, cex.axis = 1.25)
 
 ```
 
@@ -483,22 +512,22 @@ In the R code chunk below, please do the following:
 a) Based on the output of `radfit()` and plotting above, discuss which model best fits our rank-abundance curve for `site1`?
 b) Can we make any inferences about the forces, processes, and/or mechanisms influencing the structure of our system, e.g., an ecological community?
 
-> ***Answer 9a***:  
-> ***Answer 9b***:
+> ***Answer 9a***:  The mandelbrot seems to fit the best for our rank-abundance curve for site1.
+> ***Answer 9b***: BCI is a tropical rainforest that is teeming with rare species, controlling for evenness can improve the fit of the Zipf model significantly. Some mechanisms that may be invoked would be strong negative-density dependent feedbacks. 
 
 
 ***Question 10***: Answer the following questions about the preemption model:
 a.  What does the preemption model assume about the relationship between total abundance (*N*) and total resources that can be preempted?
 b.  Why does the niche preemption model look like a straight line in the RAD plot?
 
-> ***Answer 10a***:  
-> ***Answer 10b***:
+> ***Answer 10a***: N decreases as total resources is used up/ preempted. 
+> ***Answer 10b***: The niche preemption model looks like a straight line in the RAD plot because it assumes that the abundance of each new added species would be a fraction of the previous species. 
 
 
 
 ***Question 11***: Why is it important to account for the number of parameters a model uses when judging how well it explains a given set of data?
 
-> ***Answer 11***:
+> ***Answer 11***: It is important to account for the number of parameters becuase it may explain some biological base to explain the patterns of abudnance. 
 
 
 ## SYNTHESIS
@@ -506,16 +535,26 @@ b.  Why does the niche preemption model look like a straight line in the RAD plo
 1.  As stated by Magurran (2004) the  ${D = } \sum p_i^2$ derivation of Simpson's Diversity only applies to communities of infinite size. For anything but an infinitely large community, Simpson's Diversity index is calculated as ${D = } \sum \frac{n_i(n_i -1)} {N(N-1)}$. 
 Assuming a finite community, calculate Simpson's D, 1 - D, and Simpson's inverse (i.e. 1/D) for `site 1` of the BCI site-by-species matrix. 
 
+# SimpD(site1)
+# 1-SimpD(site1)
+
 2.  Along with the rank-abundance curve (RAC), another way to visualize the distribution of abundance among species is with a histogram (a.k.a., frequency distribution) that shows the frequency of different abundance classes.
 For example, in a given sample, there may be 10 species represented by a single individual, 8 species with two individuals, 4 species with three individuals, and so on.
 In fact, the rank-abundance curve and the frequency distribution are the two most common ways to visualize the species-abundance distribution (SAD) and to test species abundance models and biodiversity theories.
 To address this homework question, use the R function **hist()** to plot the frequency distribution for `site 1` of the BCI site-by-species matrix, and describe the general pattern you see.
 
+# hist(rac)
+# I see that 5 species make up the majority of the indivudals in site1 while ~20 other species occur in low (<10) frequency. 
+
 3.  We asked you to find a biodiversity dataset with your partner.
 This data could be one of your own or it could be something that you obtained from the literature. 
 Load that dataset.
 How many sites are there?
+# TBA
+
 How many species are there in the entire site-by-species matrix?
+# TBA
+
 Any other interesting observations based on what you learned this week?
 
 ## SUBMITTING YOUR ASSIGNMENT
