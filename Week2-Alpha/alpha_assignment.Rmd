@@ -1,8 +1,7 @@
 ---
-title: "Assignment: Local (alpha) Diversity"
-author: "Venus Kuo; Z620: Quantitative Biodiversity, Indiana University"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
-output: pdf_document
+title: 'Assignment: Local (alpha) Diversity'
+author: 'Venus Kuo; Z620: Quantitative Biodiversity, Indiana University'
+output: html_document
 geometry: margin=2.54cm
 ---
 
@@ -445,7 +444,7 @@ diversity(site1, "simp")
 Do they agree? If so, why? If not, why? What can you infer from the results.
 
 > ***Answer 7***:
-# The evenness value for site 1 using the Evar is 0.5 while the value of shannon diversity index E(H') is 39.415. They do not agree. 
+# The evenness value for site 1 using the Evar is 0.5 while the value of shannon diversity index E(H') is 39.415. The shannon's diversity value and Evar value outputs are not really comparable since one considers evenness and the other is a metric for diversity. 
 
 ### Fisher's $\boldsymbol\alpha$
 
@@ -472,6 +471,7 @@ Evar(site1)
 ***Question 8***: How is Fisher's $\boldsymbol\alpha$ different from $E_{H'}$ and $E_{var}$? What does Fisher's $\boldsymbol\alpha$ take into account that $E_{H'}$ and $E_{var}$ do not?
 
 > ***Answer 8***:
+# Fisher's alpha is different from shannon's diversity in that Fishers is asympotitically similar to Simpson's diversity. Simpson's diversity is a dominance index and gives more weight to the common or dominant species. 
 # Fishers is different than the Simpson's diversity and evenness index because Fisher's alpha estimates diversity instead of simply just calculating diversity.
 
 
@@ -550,12 +550,13 @@ To address this homework question, use the R function **hist()** to plot the fre
 This data could be one of your own or it could be something that you obtained from the literature. 
 Load that dataset.
 How many sites are there?
-# TBA
+# 298
 
 How many species are there in the entire site-by-species matrix?
-# TBA
+# 1250
 
 Any other interesting observations based on what you learned this week?
+# N/A
 
 ## SUBMITTING YOUR ASSIGNMENT
 Use Knitr to create a PDF of your completed alpha_assignment.Rmd document, push it to GitHub, and create a pull request.
