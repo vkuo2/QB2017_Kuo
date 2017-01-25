@@ -535,8 +535,18 @@ b.  Why does the niche preemption model look like a straight line in the RAD plo
 1.  As stated by Magurran (2004) the  ${D = } \sum p_i^2$ derivation of Simpson's Diversity only applies to communities of infinite size. For anything but an infinitely large community, Simpson's Diversity index is calculated as ${D = } \sum \frac{n_i(n_i -1)} {N(N-1)}$. 
 Assuming a finite community, calculate Simpson's D, 1 - D, and Simpson's inverse (i.e. 1/D) for `site 1` of the BCI site-by-species matrix. 
 
-# SimpD(site1)
-# 1-SimpD(site1)
+Simp_Div <- 0 
+l <- length(site1)
+N <- sum(site1)
+for(i in 1:l){
+  Simp_Div <- Simp_Div + (site1[,i]*(site1[,i]-1)/N/(N-1))
+}
+
+# Simp_Div(site1)
+# 0.0231
+
+# 1/Simp_Div
+# 43.12145
 
 2.  Along with the rank-abundance curve (RAC), another way to visualize the distribution of abundance among species is with a histogram (a.k.a., frequency distribution) that shows the frequency of different abundance classes.
 For example, in a given sample, there may be 10 species represented by a single individual, 8 species with two individuals, 4 species with three individuals, and so on.
@@ -549,11 +559,32 @@ To address this homework question, use the R function **hist()** to plot the fre
 3.  We asked you to find a biodiversity dataset with your partner.
 This data could be one of your own or it could be something that you obtained from the literature. 
 Load that dataset.
+
+rm(list = ls())
+setwd("C:/Users/Venus/Github/QB2017BenavidezKuo/data")
+
+# Load packages #
+require("vegan")  #Already contains BCI data
+require("tidyr")
+require(dplyr)
+
+# Load dataset #
+BCI2010 <- read.delim("BCI2010.txt", header=T)
+BCI1982 <- read.delim("BCI1982.txt", header=T)
+
+# Transform 2010 census data into site by species matrix #
+BCI.2010.SbyS <- group_by(BCI2010, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+dim(BCI.2010.SbyS)
+
+# Transform 1982 census data # 
+BCI.1982.SbyS <- group_by(BCI1982, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+
+
 How many sites are there?
-# 298
+# 1250
 
 How many species are there in the entire site-by-species matrix?
-# 1250
+# 298
 
 Any other interesting observations based on what you learned this week?
 # N/A

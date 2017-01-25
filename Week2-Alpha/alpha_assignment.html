@@ -677,12 +677,19 @@ plot(RACresults, las = 1, cex.lab = 1.4, cex.axis = 1.25)</code></pre>
 <ol style="list-style-type: decimal">
 <li>As stated by Magurran (2004) the <span class="math inline">\({D = } \sum p_i^2\)</span> derivation of Simpson’s Diversity only applies to communities of infinite size. For anything but an infinitely large community, Simpson’s Diversity index is calculated as <span class="math inline">\({D = } \sum \frac{n_i(n_i -1)} {N(N-1)}\)</span>. Assuming a finite community, calculate Simpson’s D, 1 - D, and Simpson’s inverse (i.e. 1/D) for <code>site 1</code> of the BCI site-by-species matrix.</li>
 </ol>
+<p>Simp_Div &lt;- 0 l &lt;- length(site1) N &lt;- sum(site1) for(i in 1:l){ Simp_Div &lt;- Simp_Div + (site1[,i]*(site1[,i]-1)/N/(N-1)) }</p>
 </div>
-<div id="simpdsite1" class="section level1">
-<h1>SimpD(site1)</h1>
+<div id="simp_divsite1" class="section level1">
+<h1>Simp_Div(site1)</h1>
 </div>
-<div id="simpdsite1-1" class="section level1">
-<h1>1-SimpD(site1)</h1>
+<div id="section" class="section level1">
+<h1>0.0231</h1>
+</div>
+<div id="simp_div" class="section level1">
+<h1>1/Simp_Div</h1>
+</div>
+<div id="section-1" class="section level1">
+<h1>43.12145</h1>
 <ol start="2" style="list-style-type: decimal">
 <li>Along with the rank-abundance curve (RAC), another way to visualize the distribution of abundance among species is with a histogram (a.k.a., frequency distribution) that shows the frequency of different abundance classes. For example, in a given sample, there may be 10 species represented by a single individual, 8 species with two individuals, 4 species with three individuals, and so on. In fact, the rank-abundance curve and the frequency distribution are the two most common ways to visualize the species-abundance distribution (SAD) and to test species abundance models and biodiversity theories. To address this homework question, use the R function <strong>hist()</strong> to plot the frequency distribution for <code>site 1</code> of the BCI site-by-species matrix, and describe the general pattern you see.</li>
 </ol>
@@ -693,9 +700,27 @@ plot(RACresults, las = 1, cex.lab = 1.4, cex.axis = 1.25)</code></pre>
 <div id="i-see-that-5-species-make-up-the-majority-of-the-indivudals-in-site1-while-20-other-species-occur-in-low-10-frequency." class="section level1">
 <h1>I see that 5 species make up the majority of the indivudals in site1 while ~20 other species occur in low (&lt;10) frequency.</h1>
 <ol start="3" style="list-style-type: decimal">
-<li>We asked you to find a biodiversity dataset with your partner. This data could be one of your own or it could be something that you obtained from the literature. Load that dataset. How many sites are there? # 298</li>
+<li>We asked you to find a biodiversity dataset with your partner. This data could be one of your own or it could be something that you obtained from the literature. Load that dataset.</li>
 </ol>
-<p>How many species are there in the entire site-by-species matrix? # 1250</p>
+<p>rm(list = ls()) setwd(“C:/Users/Venus/Github/QB2017BenavidezKuo/data”)</p>
+</div>
+<div id="load-packages" class="section level1">
+<h1>Load packages</h1>
+<p>require(“vegan”) #Already contains BCI data require(“tidyr”) require(dplyr)</p>
+</div>
+<div id="load-dataset" class="section level1">
+<h1>Load dataset</h1>
+<p>BCI2010 &lt;- read.delim(“BCI2010.txt”, header=T) BCI1982 &lt;- read.delim(“BCI1982.txt”, header=T)</p>
+</div>
+<div id="transform-2010-census-data-into-site-by-species-matrix" class="section level1">
+<h1>Transform 2010 census data into site by species matrix</h1>
+<p>BCI.2010.SbyS &lt;- group_by(BCI2010, Quadrat) %&gt;% count(Latin) %&gt;% spread(key=Latin, value=n , fill=0) dim(BCI.2010.SbyS)</p>
+</div>
+<div id="transform-1982-census-data" class="section level1">
+<h1>Transform 1982 census data</h1>
+<p>BCI.1982.SbyS &lt;- group_by(BCI1982, Quadrat) %&gt;% count(Latin) %&gt;% spread(key=Latin, value=n , fill=0)</p>
+<p>How many sites are there? # 1250</p>
+<p>How many species are there in the entire site-by-species matrix? # 298</p>
 <p>Any other interesting observations based on what you learned this week? # N/A</p>
 <div id="submitting-your-assignment" class="section level2">
 <h2>SUBMITTING YOUR ASSIGNMENT</h2>
