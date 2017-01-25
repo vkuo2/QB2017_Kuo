@@ -1,7 +1,9 @@
 ---
 title: 'Assignment: Local (alpha) Diversity'
 author: 'Venus Kuo; Z620: Quantitative Biodiversity, Indiana University'
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 geometry: margin=2.54cm
 ---
 
