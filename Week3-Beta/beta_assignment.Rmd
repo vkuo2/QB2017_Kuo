@@ -1,6 +1,6 @@
 ---
 title: "Assignment: Among Site (Beta) Diversity"
-author: "Student Name; Z620: Quantitative Biodiversity, Indiana University"
+author: "Venus Kuo; Z620: Quantitative Biodiversity, Indiana University"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
 geometry: margin=2.54cm
@@ -43,10 +43,16 @@ In the R code chunk below, provide the code to:
 4. load the `vegan` R package (be sure to install if needed).  
 
 ```{r}
+rm(list = ls())
+getwd() 
+setwd("C:Users/Venus/GitHub/QB-2017/Week3-Beta/")
 
-
-
-
+package.list <- c('vegan', 'ade4', 'viridis', 'gplots', 'BiodiversityR', 'indicspecies') 
+for (package in package.list) {
+  if (!require(package, character.only=T, quietly=T)) { 
+    install.packages(package)
+    library(package, character.only=T)
+} }
 ```
 
 ## 2) LOADING DATA
@@ -57,9 +63,10 @@ In the R code chunk below, do the following:
 2. explore the structure of the dataset.
 
 ```{r}
-
-
-
+# Loading doubs dataset #
+data(doubs)
+str(doubs, max.level=1)
+head(doubs$env)
 
 ```
 
@@ -69,9 +76,9 @@ a.  How many objects are in `doubs`?
 b.  How many fish species are there in the `doubs` dataset?
 c.  How many sites are in the `doubs` dataset?
 
-> ***Answer 1a***:  
-> ***Answer 1b***:  
-> ***Answer 1c***:  
+> ***Answer 1a***:  117 objects
+> ***Answer 1b***:  27 species
+> ***Answer 1c***:  30 sites
 
 ### Visualizing the Doubs River Dataset
 
@@ -81,9 +88,9 @@ a.  How does fish richness vary along the sampled reach of the Doubs River?
 b.  How does Brown Trout (*Salmo trutta*) abundance vary along the sampled reach of the Doubs River?
 c.  What do these patterns say about the limitations of using richness when examining patterns of biodiversity?
 
-> ***Answer 2a***:  
-> ***Answer 2b***:  
-> ***Answer 2c***:  
+> ***Answer 2a***:  Fish richness was higher (S=30) downstream and lower (S=10,0) upstream. The intermediate zone was a mixure of medium (S=20) richness. 
+> ***Answer 2b***:  Brown troubte abundnace is low or absent downstream but is very abundant upstream and in between down and upstream. 
+> ***Answer 2c***:  Just looking at richness may not be as informative when trying to compare the richness among sites (beta-diversity).
 
 ## 3) QUANTIFYING BETA-DIVERSITY
 
@@ -93,15 +100,39 @@ In the R code chunk below, do the following:
 2. use this function to analyze various aspects of $\beta$-diversity in the Doubs River.  
 
 ```{r}
+# Modified function for pariwise beta-diversity for turnover #
+beta.w <- function(site.by.species = "", sitenum1 = "", sitenum2 = "", pairwise = FALSE) {
+  # ONLY if we specify pairwise as TRUE, do this:
+  if (pairwise == TRUE) {
+    
+    # As a check, let's print an error if we do not provide needed arguements
+    if (sitenum1 == "" | sitenum2 == "") {
+      print("Error: please specify sites to compare")
+      return(NA)}
+    
+    # If our function made it this far, let's calculate pairwise beta diversity
+    site1 = site.by.species[sitenum1, ]
+    site2 = site.by.species[sitenum2, ]
+    site1 = subset(site1, select = site1 > 0)
+    site2 = subset(site2, select = site2 > 0)
+    gamma = union(colnames(site1), colnames(site2))
+    s     = length(gamma)
+    a.bar = mean(c(specnumber(site1), specnumber(site2)))
+    b.w   = round(s/a.bar - 1, 3)
+    return(b.w)
+  }
+# OTHERWISE pairwise defaults to FALSE, so do this, like before:
+  else{
+    SbyS.pa <- decostand(site.by.species, method = "pa")
+    S <- ncol(SbyS.pa[ , which(colSums(SbyS.pa) > 0)])
+    a.bar <- mean(specnumber(SbyS.pa))
+    b.w <- round(S/a.bar, 3)
+    return(b.w)
+  }
+}
 
-
-
-
-
-
-
-
-
+# Doubs dataset # 
+beta.w(site.by.species = doubs$fish, sitenum1 = "1", sitenum2 = "10" , pairwise=TRUE)
 
 ```
 
@@ -112,7 +143,7 @@ b.  Is the fish assemblage at site 1 more similar to the one at site 2 or site 1
 c.  Using your understanding of the equation $\beta_{w} = \gamma/\alpha$, how would your interpretation of $\beta$ change if we instead defined beta additively (i.e., $\beta = \gamma - \alpha$)?
 
 > ***Answer 3a***:  
-> ***Answer 3b***:  
+> ***Answer 3b***:  The beta diversity of fish between 1 and 2 is 0.5, while between 1 and 10 is 0.714. So site 1 is more similar to site 10 than site 2.
 > ***Answer 3c***:  
 
 ### The Resemblance Matrix
