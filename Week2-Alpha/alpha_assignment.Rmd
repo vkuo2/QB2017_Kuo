@@ -178,11 +178,11 @@ In the R code chunk below, do the following:
 4. Use these functions to estimate richness at both `site1` and `soilbac1`. 
 
 ```{r}
-# Chao1
+# Chao1 # 
 S.chao1 <- function(x = ""){
 S.obs(x) + (sum(x == 1)^2) / (2 * sum(x == 2)) }
 
-# Chao2
+# Chao2 # 
 S.chao2 <- function(site = "", SbyS = ""){ 
   SbyS = as.data.frame(SbyS)
   x = SbyS[site, ]
@@ -193,7 +193,7 @@ S.chao2 <- function(site = "", SbyS = ""){
   return(S.chao2)
 }
 
-# ACE
+# ACE #
 S.ace <- function(x = "", thresh=10){
   x <- x[x>0]
   S.abund <- length(which(x>thresh))
