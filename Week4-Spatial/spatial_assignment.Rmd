@@ -409,7 +409,7 @@ ssad <- function(x){
 }
 # 2. Set plot parameters
 par(mfrow=c(3, 2))
-
+tree.names <- names(BCI.1982.SBS)
 # 3. Declare a counter variable
 ct <- 0 # a counter variable
 while (ct < 6){ 
@@ -419,13 +419,13 @@ while (ct < 6){
 if (length(ad) > 2 & sum(ad > 10)) {
   ct <- ct + 1 
   plot(density(ad), col = 'red' , xlab = 'Site abundance' , 
-       ylab = 'Probability Density')
+       ylab = 'Probability Density', main=tree.names[species])
   }
 }
 
 
 ```
-Discusion:  I had a hard time figuring out how to add the species name to the top of the graphs. But it appears that from the six tree species selected from the 1982 BCI census dataset shows that generally, species will typically be abundnant in only a fraction of the sites that it occurs (somewhere between 1-5 depending on the species). 
+Discusion:  It appears that from the six tree species selected from the 1982 BCI census dataset shows that generally, species will typically be abundnant in only a fraction of the sites that it occurs (somewhere between 1-5 depending on the species). 
 
 
 
