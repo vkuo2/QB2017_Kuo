@@ -39,8 +39,8 @@ In the R code chunk below, provide the code to:
 ```{r, results = 'hide'}
 rm(list = ls())
 getwd() 
-#setwd("C:/Users/Venus/Github/QB2017_Kuo/Week3-Beta/")
-setwd("/Users/vkuo/GitHub/QB2017_Kuo/Week4-Spatial")
+setwd("C:/Users/Venus/Github/QB2017_Kuo/Week3-Beta/")
+#setwd("/Users/vkuo/GitHub/QB2017_Kuo/Week4-Spatial")
 ```
 
 ## 2) LOADING R PACKAGES
@@ -64,7 +64,7 @@ for (package in package.list) {
 > ***Answer 1***:  
 simba is used to calculate similarity measurements for binary data. 
 sp is a package providing classes and methods for spatial data such as points, lines, polygons, and grids.
-rgdal allows bindings for the geospatial data abstraction library, 
+rgdal allows bindings for the geospatial data abstraction library. 
 
 ## 3) LOADING DATA
 In the R code chunk below, use the example in the handout to do the following:  
@@ -110,11 +110,12 @@ newmap <- GetMap(center = c(39.1,-86.3), zoom = 10,
                  destfile = "PondsMap.png", maptype="terrain")
 PlotOnStaticMap(newmap, zoom = 10, cex = 2, col = 'blue') 
 PlotOnStaticMap(newmap, lats, lons, cex = 1, pch = 20, col = 'red', add = TRUE)
+
 ```
 
 ***Question 3***:  Briefly describe the geographical layout of our sites.
 
-> ***Answer 3***:  
+> ***Answer 3***:  The get map function retrieved and displayed the map of Brown County State Park form google maps. All points are located within Brown County State park but clustered into 5 or 6 groups around Lake Monroe, with some sites closer and some farther away.  
 
 
 In the R code chunk below, do the following:  
@@ -139,21 +140,21 @@ plot(Refuge.Ponds, line='r', col='red', pch = 20, cex = 1.5, add = TRUE)
 
 ***Question 4a***: What are datums and projections?
 
-> ***Answer 4a***:  
+> ***Answer 4a***: Datums are model for Earth's shape (elicpse) and projections are the way in which coordinates on a sphere are projected onto a 2-D surface (a map).
 
 
 ## 5) UNDERSTANDING SPATIAL AUTOCORRELATION
 
 ***Question 5***: In your own words, explain the concept of spatial autocorrelation.
 
-> ***Answer 5***:
+> ***Answer 5***: "Related things tend to be closer to each other than to distant things". If something is more related and closer in space then that is positive autocorrelation but if related things are farther apart than expected then that is negative autocorrelation. 
 
 
 ## 6) EXAMINING DISTANCE-DECAY
 
 ***Question 6***: In your own words, explain what a distance decay pattern is and what it reveals.
 
-> ***Answer 6***:
+> ***Answer 6***: The distance decay pattern is the pattern of spatial autocorrelation (species and enviromental similarity) across geographic distance. 
 
 In the R code chunk below, do the following:  
 
@@ -211,16 +212,16 @@ diffslope(env, struc, dist, struc)
 ```
 
 
-***Question 7***: What can you conclude about community similarity with regars to environmental distance and geographic distance?
+***Question 7***: What can you conclude about community similarity with regards to environmental distance and geographic distance?
 
-> ***Answer 7***: 
+> ***Answer 7***: Enviromental sites become more dissimilar as they increase in geographic distance. Species community composition seems to stay the same or increase slightly in similarity with increase geographic distance. 
 
 
 ## 7) EXAMINING SPECIES SPATIAL ABUNDANCE DISTRIBUTIONS
 
 ***Question 8***: In your own words, explain the species spatial abundance distribution and what it reveals.
 
-> ***Answer 8***:
+> ***Answer 8***: SSAD is shows a pattern of commonness and rarity distributed across sites. The SSAD will generally show that a few sites will have many individuals while many sites will have few individuals, moreover a few species will be abundant while many species will appear only a few times. 
 
 
 In the R code chunk below, do the following: 
@@ -259,14 +260,14 @@ Many patterns of biodiversity relate to spatial scale.
 
 ***Question 9***:  List, describe, and give examples of the two main aspects of spatial scale
 
-> ***Answer 9***: 
+> ***Answer 9***: Extent and Grain are two main components of spatial scale. Extent is the greatest distance considered in a study, while grain is the smallest scale or unit measured in the same study. For example, what is the distance of the UK shore? ... the answer depends on the grain size used in the measurement. Another example would be deciding how individuals of a population is aggregated, up-close the answer would be randomly aggregated, far away the answer might be that individuals aggregate into one spot.  
 
 
 ## 9) CONSTRUCTING THE SPECIES-AREA RELATIONSHIP
 
 ***Question 10***: In your own words, describe the species-area relationship.
 
-> ***Answer 10***: 
+> ***Answer 10***: The SAR is a scaling law that is used to predict species diversity across scales, because generally the more sites you sample the more species you encounter up to a certain point. 
 
 
 In the R code chunk below, provide the code to: 
@@ -275,9 +276,23 @@ In the R code chunk below, provide the code to:
 
 ```{r, results = 'hide', message = FALSE, warning = FALSE}
 # 1. Declare variables to hold simulated community and species information 
-
+community <- c() 
+species <- c() 
 # 2. Populate the simulated landscape
+plot(0, 0, col='white', xlim = c(0, 100), ylim = c(0, 100),
+     xlab='x coordinate', ylab='y coordinate', 
+     main='A simulated landscape occupied by 100species, having 1 to 1000 individuals each.')
 
+while (length(community) < 100){
+  std <- runif(1, 1, 10) # random sample from a uniform distribution
+  ab <- sample(1000, 1) # random number between 1 and 1000
+  x <- rnorm(ab, mean = runif(1, 0, 100), sd = std) # 1000 random numbers from a Normal distribution
+  y <- rnorm(ab, mean = runif(1, 0, 100), sd = std) # 1000 random numbers from a Normal distribution
+  color <- c(rgb(runif(1),runif(1),runif(1))) # Let each species have a randomly chosen color
+  points(x, y, pch=".", col=color) # Add points to a plot
+  species <- list(x, y, color) # The species color, x-coords, and y-coords
+  community[[length(community)+1]] <- species # Add the species info to the community
+}
 ```
 
 While consult the handout for assistance, in the R chunk below, provide the code to: 
@@ -287,9 +302,28 @@ While consult the handout for assistance, in the R chunk below, provide the code
 
 ```{r}
 # 1. Declare the spatial extent and lists to hold species richness and area data
-
+lim <- 10
+S.list <- c()
+A.list <- c()
 # 2. Construct a 'while' loop and 'for' loop combination to quantify the numbers of species for progressively larger areas of the simulated landscape.
-
+while(lim <= 100) {
+  S <- 0
+  for (sp in community) {
+    xs <- sp[[1]]
+    ys <- sp[[2]]
+    sp.name <- sp[[3]]
+    xy.coords <- cbind(xs, ys)
+    for (xy in xy.coords) {
+      if (max(xy) <= lim) {
+        S <- S + 1
+          break
+      }
+    }
+  }
+  S.list <- c(S.list, log10(S))
+  A.list <- c(A.list, log10(lim^2))
+  lim <- lim*2
+}
 # 3. Be sure to log10-transform the richness and area data
 ```
 
@@ -301,18 +335,99 @@ In the R code chunk below, provide the code to:
 3. Add a legend for the z-value (i.e., slope of the SAR)
 
 ```{r, results = 'hide', message = FALSE, warning = FALSE}
+results <- lm(S.list ~ A.list)
+plot(A.list, S.list, col="dark red", pch=20, cex=2,
+     main="Species-area relationship", 
+     xlab="ln(Area)", ylab="ln(Richness)")
+
+abline(results, col="red", lwd=2)
+
+int <- round(results[[1]][[1]],2)
+z <- round(results[[1]][[2]],2)
+legend(x=2, y=2, paste(c('slope = ', z), collapse = " "), cex=0.8,
+       box.lty=0)
 
 ```
 
 
 ***Question 10a***: Describe how richness relates to area in our simulated data by interpreting the slope of the SAR.
 
-> ***Answer 10a***: 
+> ***Answer 10a***: The slope is 0.22, this means that as area increases, so does the species richness. 
 
 ***Question 10b***: What does the y-intercept of the SAR represent?
 
-> ***Answer 10b***: 
+> ***Answer 10b***: The y-axis represents the log normal of species number (richness) so the y axis would be the alpha diversity of a site or a close cluster of sites? 
 
 
 ## SYNTHESIS
 Load the dataset you are using for your project. Plot and discuss either the geogrpahic Distance-Decay relationship, the SSADs for at least four species, or any variant of the SAR (e.g., random accumulation of plots or areas, accumulation of contiguous plots or areas, nested design).
+
+```{r}
+# Set working directory # 
+rm(list = ls())
+setwd("C:/Users/Venus/Github/QB2017BenavidezKuo/data")
+
+# Load packages #
+require("vegan") 
+require("tidyr")
+require(dplyr)
+
+# Load BCI datasets # 
+BCI2010 <- read.delim("BCI2010.txt", header=T)
+BCI2005 <- read.delim("BCI2005.txt", header=T)
+BCI2000 <- read.delim("BCI2000.txt", header=T)
+BCI1995 <- read.delim("BCI1995.txt", header=T)
+BCI1990 <- read.delim("BCI1990.txt", header=T)
+BCI1985 <- read.delim("BCI1985.txt", header=T)
+BCI1982 <- read.delim("BCI1982.txt", header=T)
+
+# Formatting datasets into SbyS matrcies # 
+BCI.2010.SbyS <- group_by(BCI2010, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+BCI.2005.SbyS <- group_by(BCI2005, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+BCI.2000.SbyS <- group_by(BCI2000, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+BCI.1995.SbyS <- group_by(BCI1995, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+BCI.1990.SbyS <- group_by(BCI1990, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+BCI.1985.SbyS <- group_by(BCI1985, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+BCI.1982.SbyS <- group_by(BCI1982, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+
+# Removing quadrat row
+BCI.1982.SBS=BCI.1982.SbyS[,2:307]
+BCI.1985.SBS=BCI.1985.SbyS[,2:308]
+BCI.1990.SBS=BCI.1990.SbyS[,2:306]
+BCI.1995.SBS=BCI.1995.SbyS[,2:304]
+BCI.2000.SBS=BCI.2000.SbyS[,2:303]
+BCI.2005.SBS=BCI.2005.SbyS[,2:300]
+BCI.2010.SBS=BCI.2010.SbyS[,2:298]
+
+# SADD for 4 species # 
+# 1. Define an SSAD function
+ssad <- function(x){
+  ad <- c(2, 2)
+  ad <- BCI.1982.SbyS[, species]
+  ad = as.vector(t(x = ad)) 
+  ad = ad[ad > 0]
+}
+# 2. Set plot parameters
+par(mfrow=c(3, 2))
+tree.names <- names(BCI.1982.SBS)
+# 3. Declare a counter variable
+ct <- 0 # a counter variable
+while (ct < 6){ 
+  species <- sample(1:length(BCI.1982.SbyS), 1) 
+  ad <- ssad(species) 
+# 4. Write a while loop to plot the SSADs of six species chosen at random 
+if (length(ad) > 2 & sum(ad > 10)) {
+  ct <- ct + 1 
+  plot(density(ad), col = 'red' , xlab = 'Site abundance' , 
+       ylab = 'Probability Density', main=tree.names[species])
+  }
+}
+
+
+```
+Discusion:  It appears that from the six tree species selected from the 1982 BCI census dataset shows that generally, species will typically be abundnant in only a fraction of the sites that it occurs (somewhere between 1-5 depending on the species). 
+
+
+
+
+
