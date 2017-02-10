@@ -1,6 +1,6 @@
 ---
 title: "Assignment: Temporal Diversity"
-author: "Student Name; Z620: Quantitative Biodiversity, Indiana University"
+author: "Venus Kuo; Z620: Quantitative Biodiversity, Indiana University"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
 geometry: margin=2.54cm
@@ -41,10 +41,19 @@ In the R code chunk below, provide the code to:
 4. load any packages you need to complete the assignment.
 
 ```{r}
+# Set working directory #
+rm(list = ls())
+getwd() 
+#setwd("C:/Users/Venus/Github/QB2017_Kuo/Week5-Temporal")
+setwd("/Users/vkuo/GitHub/QB2017_Kuo/Week5-Temporal/")
 
-
-
-
+# Require or install packages #
+package.list <- c('vegan', 'tidyr', 'dplyr', 'codyn', 'ggplot2', 'cowplot', 'MullerPlot', 'RColorBrewer', 'reshape2', 'lubridate', 'TTR', 'xtable', 'multcomp', 'pander', 'png', 'grid', 'teries', 'nlme', 'forecast', 'lsmeans') 
+for (package in package.list) {
+  if (!require(package, character.only=T, quietly=T)) { 
+    install.packages(package)
+    library(package, character.only=T)
+} }
 ```
 
 ## 2) LOADING DATA
@@ -55,10 +64,13 @@ In the R code chunk below, do the following:
 2. explore the structure of the dataset.
 
 ```{r}
+# Load portal dataset #
+portal <- read.table("data/combined.csv", sep = ",", header = TRUE)
 
-
-
-
+# Venus the Explorer #
+str(portal)
+length(unique(portal$plot_id))
+length(unique(portal$species))
 ```
 
 ***Question 1***:  Describe some of the attributes of the `portal` dataset.  
@@ -66,8 +78,8 @@ In the R code chunk below, do the following:
 a.  How many plots are in `portal`?
 b.  How many rodent species are there in the `portal` dataset?
 
-> ***Answer 1a***:  
-> ***Answer 1b***:  
+> ***Answer 1a***:  There are 24 plots.
+> ***Answer 1b***:  There are 40 rodent species.
 
 ## 3) WRANGLING THE PORTAL DATASET
 
@@ -80,6 +92,83 @@ In the R code chunk below, do the following:
 5. Using the hypothesis testing tools you learned in the beta-diversity module, test the hypothesis that species abundances across sites vary as a factor of treatment type (i.e., plot_type). 
 
 ```{r}
+# Create new date vector #
+portal <- unite(portal, col = date , c(year, month, day), sep = "-", remove = FALSE)
+# Create new taxon vector # 
+portal <- unite(portal, col = taxon, c(genus, species), sep = "_" , remove = FALSE)
+# Making time by species matrix #
+time.by.species <- group_by(portal, year, plot_id, plot_type) %>% count(taxon) %>% spread(key = taxon, value = n, fill = 0)
+# Chose year 1984 too look at #
+dplyr::filter(time.by.species, year == 1984)
+# Chose plot 5 to look at #
+dplyr::filter(time.by.species, plot_id == 5)
+# Converting tidyr object into data frame #
+time.by.species <- as.data.frame(time.by.species)
+time.by.species
+
+## Made site by species matrix for the year 1977 ##
+portal1977 <- subset(time.by.species, year == 1977)
+
+# Make vector for plot treatment type #
+treatment <- portal1977$plot_type
+
+# Take out first 3 columns # 
+portal1977 <- c(portal1977[, -1:-3])
+
+## Analyze alpha diversity across sites ##
+alpha <- rbind(diversity(portal1977[1:23,], index="shannon"))
+alpha
+
+## Ordination of site by species matrix ##
+# Principal Coordinate Analysis #
+portal.db <- vegdist(portal1977, method = "bray", upper = TRUE , diag = TRUE)
+pcoa <- cmdscale(portal.db, eig = TRUE, k = 3)
+# Interpreting PCoA output # 
+explainvar1 <- round(pcoa$eig[1] / sum(pcoa$eig), 3) * 100
+explainvar2 <- round(pcoa$eig[2] / sum(pcoa$eig), 3) * 100
+explainvar3 <- round(pcoa$eig[3] / sum(pcoa$eig), 3) * 100
+sum.eig <- sum(explainvar1, explainvar2, explainvar3)
+
+explainvar1
+explainvar2
+explainvar3
+sum.eig
+
+## Plot the PCoA ##
+# Define Plot Parameters
+par(mar = c(5, 5, 1, 2) + 0.1)
+# Initiate Plot
+plot(pcoa$points[ ,1], pcoa$points[ ,2],
+     xlab = paste("PCoA 1 (", explainvar1, "%)", sep = ""),
+     ylab = paste("PCoA 2 (", explainvar2, "%)", sep = ""),
+     pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2, axes = FALSE)
+
+# Add Axes
+axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+abline(h = 0, v = 0, lty = 3)
+box(lwd = 2)
+
+# Add Points & Labels
+points(pcoa$points[ ,1], pcoa$points[ ,2],
+       pch = 19, cex = 3, bg = "gray", col = "gray")
+text(pcoa$points[ ,1], pcoa$points[ ,2],
+     labels = row.names(pcoa$points))
+
+## Hypothesis testing: Beta-diversity ##
+# Create factor vector in Doubs River # 
+treatment <- c(rep("HQ", 13), rep("MQ", 5), rep("LQ", 6), rep("MQ", 5))
+
+# Run PERMANOVA with adonis function #
+adonis(fish ~ quality, method = "bray", permutations = 999)
+
+indval <- multipatt(fish, cluster = quality, func = "IndVal.g", control = how(nperm=999))
+summary(indval)
+
+fish.rel <- decostand(fish, method = "total")
+phi <- multipatt(fish.rel, cluster = quality, func = "r.g", control = how(nperm=999))
+summary(phi)
+
 
 ```
 
