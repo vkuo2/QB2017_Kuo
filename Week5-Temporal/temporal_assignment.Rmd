@@ -44,11 +44,11 @@ In the R code chunk below, provide the code to:
 # Set working directory #
 rm(list = ls())
 getwd() 
-#setwd("C:/Users/Venus/Github/QB2017_Kuo/Week5-Temporal")
-setwd("/Users/vkuo/GitHub/QB2017_Kuo/Week5-Temporal/")
+setwd("C:/Users/Venus/Github/QB2017_Kuo/Week5-Temporal")
+#setwd("/Users/vkuo/GitHub/QB2017_Kuo/Week5-Temporal/")
 
 # Require or install packages #
-package.list <- c('vegan', 'tidyr', 'dplyr', 'codyn', 'ggplot2', 'cowplot', 'MullerPlot', 'RColorBrewer', 'reshape2', 'lubridate', 'TTR', 'xtable', 'multcomp', 'pander', 'png', 'grid', 'teries', 'nlme', 'forecast', 'lsmeans') 
+package.list <- c('vegan', 'tidyr', 'dplyr', 'codyn', 'ggplot2', 'cowplot', 'MullerPlot', 'RColorBrewer', 'reshape2', 'lubridate', 'TTR', 'xtable', 'multcomp', 'pander', 'png', 'grid', 'tseries', 'nlme', 'forecast', 'lsmeans', 'ade4', 'viridis', 'gplots', 'BiodiversityR', 'indicspecies') 
 for (package in package.list) {
   if (!require(package, character.only=T, quietly=T)) { 
     install.packages(package)
@@ -113,7 +113,7 @@ portal1977 <- subset(time.by.species, year == 1977)
 treatment <- portal1977$plot_type
 
 # Take out first 3 columns # 
-portal1977 <- c(portal1977[, -1:-3])
+portal1977 <- portal1977[, -c(1:3)]
 
 ## Analyze alpha diversity across sites ##
 alpha <- rbind(diversity(portal1977[1:23,], index="shannon"))
@@ -155,18 +155,28 @@ points(pcoa$points[ ,1], pcoa$points[ ,2],
 text(pcoa$points[ ,1], pcoa$points[ ,2],
      labels = row.names(pcoa$points))
 
+REL <- portal1977
+  for(i in 1:nrow(portal1977)){
+    REL[i, ] = portal1977[i, ] / sum(portal1977[i, ])
+  }
+
+# Now, we use this information to calculate and add species scores
+pcoa <- add.spec.scores(pcoa,REL,method = "pcoa.scores")
+text(pcoa$cproj[ ,1], pcoa$cproj[ ,2],
+labels = row.names(pcoa$cproj), col = "black")
+
+
+
 ## Hypothesis testing: Beta-diversity ##
-# Create factor vector in Doubs River # 
-treatment <- c(rep("HQ", 13), rep("MQ", 5), rep("LQ", 6), rep("MQ", 5))
 
 # Run PERMANOVA with adonis function #
-adonis(fish ~ quality, method = "bray", permutations = 999)
+adonis(portal1977 ~ treatment, method = "bray", permutations = 999)
 
-indval <- multipatt(fish, cluster = quality, func = "IndVal.g", control = how(nperm=999))
+indval <- multipatt(portal1977, cluster = treatment, func = "IndVal.g", control = how(nperm=999))
 summary(indval)
 
-fish.rel <- decostand(fish, method = "total")
-phi <- multipatt(fish.rel, cluster = quality, func = "r.g", control = how(nperm=999))
+portal.rel <- decostand(portal1977, method = "total")
+phi <- multipatt(portal.rel, cluster = treatment, func = "r.g", control = how(nperm=999))
 summary(phi)
 
 
@@ -177,8 +187,8 @@ summary(phi)
 a. Does diversity vary among sites? Does this correspond to treatment type?
 b. Is treatment type a significant predictor of site dissimilarity?
 
-> ***Answer 2a***: 
-> ***Answer 2b***:
+> ***Answer 2a***: The alpha diversity of the 23 sites from the 1977 data sites vary between 0.37 and 1.84. And according to the PERMANOVA test I performed, it showed that site treatment significantly (p-value=0.005) affected species distribution across sites. 
+> ***Answer 2b***:Yes, treatment type is a significant predictor of site dissimilarity. 
 
 ## 4) TIME SERIES ANALYSIS
 In the R code chunk below, do the following:  
@@ -191,6 +201,71 @@ In the R code chunk below, do the following:
 6. Use the tools outlined in the Handout to create an ARMA model.
 
 ```{r}
+# Time-by-species matrix with year, month, and plot_id #
+time.by.spec.2 <- filter(portal, taxa == "Rodent") %>% 
+  group_by(year, month, plot_id) %>% count(taxon)
+# Create seasonality variable using month number (6 = June; 10 = October) #
+time.by.spec.2$season <- NA
+time.by.spec.2$season <- time.by.spec.2$month %in% c(6:10)
+# Rainy seasons are June - October # 
+time.by.spec.2$season <- ifelse(time.by.spec.2$season == TRUE, "rain", "norain")
+# Group data by year and season # 
+group_by(time.by.spec.2, year, season)
+# Filter to pick plot #
+abund <- filter(time.by.spec.2, plot_id == 2) %>% 
+  group_by(year, season) %>%
+  count(wt=n)
+abund$nn <- abund$nn * 4
+abund.ts <- ts(abund$nn, frequency=2, start=c(1977,2))
+plot.ts(abund.ts, type="l", ylab="Rodent Abundance (#/hectare)",
+        xlab = "Time (year)", las = 1, ylim = c(0, 500))
+
+# Examine rodent abundance using moving average smoothing #
+abund.sm <- SMA(abund$nn, n = 5)
+plot(abund.sm, type="l", col="red", ylab="Rodent Abundance (#/hectare)",
+     xlab="Sample", las=1, ylim=c(0,500))
+lines(abund$nn, col="black")
+legend(0, 475, col=c("red", "black"), lty=c(1,1),
+       c("smooth", "non-smoth"), bty="n", cex=1)
+
+# Using Holt Winters function to specify two parameters # 
+abund.hw <- HoltWinters(abund$nn, beta = FALSE, gamma = FALSE)
+# abund.hw$fitted
+plot(abund.hw, xlab = "Time (year)", ylim = c(0,500),
+     ylab = "Rodent Abundance (#/hectrare)", las = 1, main = NA)
+legend(0, 475, col=c("black", "red"), lty = c(1,1),
+        c("non-smooth", "smooth"), bty = "n", cex = 1)
+
+# Decomposition of a time series #
+# moving average decomposition #
+abund.comp <- decompose(abund.ts)
+# plot decomposition cateories #
+plot(abund.comp)
+# remove seasonality #
+abund.adj <- abund.ts - abund.comp$seasonal
+plot(abund.adj)
+
+# Testing whether data meets assumption of stationarity #
+adf.raw <- adf.test(abund.ts, alternative = "stationary")
+adf.raw$p.value  # Fails Dickey-Fuller test #
+# Try differencing the time series and re-running #
+abund.ts.diff <- diff(abund.ts)
+adf.diff <- adf.test(abund.ts.diff, alternative = "stationary")
+adf.diff$p.value # Meets assumption #
+plot.ts(abund.ts.diff, ylab = "Rodent Abundance (#/hectare)", xlab = "Time (year)", las = 1)
+
+# Use autocorrelation function (ACF) to visualize and inform the parameterization of ARMA models #
+acf(abund.ts)
+# Partial autocorrelation function (PACF) to calculate correlations between two series # 
+pacf(abund.ts)
+# ARIMA model to descirbe the number of autoregressive lags, differencing, and order #
+abund.arm <- auto.arima(abund.ts)
+abund.arm <- arima((abund.ts), c(0, 0, 1), seasonal = list(order = c(2, 1, 0),
+                     period=2), include.mean = TRUE)
+tsdiag(abund.arm)
+# Using predictions to forecast rodent abundance #
+pred.arm <- predict(abund.arm, n.ahead = 20)
+ts.plot(abund.ts, pred.arm$pred, lty = c(1,3)) #Interesting, looks funny #
 
 ```
 
@@ -200,9 +275,9 @@ a. Does your data meet the assumption of stationarity? If not, what does this vi
 b. What does the ACF function do and how does it relate to the ARMA model? How does this differ from the autocorrelation function (ACF)?
 c. What results can you conclude from your full ARMA model along with other methods outlined in the time series setcion of the Handout?
 
-> ***Answer 3a***:
-> ***Answer 3b***:
-> ***Answer 3c***:
+> ***Answer 3a***: Originally, the data did not meet the assumption of stationarity, meaning that the mean, variance, or covariance in a time series is affected by time. 
+> ***Answer 3b***: The autocorrelation function (ACF) shows us the lags of the forecast errors and provides information for the moving average (MA) component of the model. ACF looks at the correlation between lagged intervals in the time series. The Autoregressive moving average (ARMA) models are commonly used to identify trends in data and help make predictions of trends in the future. The autoregressive component of an ARMA model uses regression to obtain coefficients that predict current observations using previous or "lagged" observations from a time series. The ACF is used to obtain lags in the time series to identify trends for the future for ARMA models. 
+> ***Answer 3c***: Our time-series trend is increasing and this change is likely does not fail the assumption of stationarity. 
 
 ## 5) REPEATED MEASURES ANALYSIS OF VARIANCE (RM-ANOVA)
 In the R code chunk below, do the following:  
@@ -212,7 +287,46 @@ In the R code chunk below, do the following:
 3. Perform an RM-ANOVA and construct a F-test using the AR(1), compound symmetery, and unstructured covariance structures.
 
 ```{r}
+# Creating data frame for RM-ANOVA #
+# Constructing time-vy-species matrix #
+time.by.species <- group_by(portal, year, plot_id, plot_type) %>% count(taxon) %>% spread(key = taxon, value = n, fill = 0)
+# Calculate observed richness from time.by.species matrix #
+richness <- as.data.frame(rowSums(time.by.species[,-c(1:3)]))
+# Create data frame with experimental design and richness data # 
+rich.all <- data.frame(time.by.species[,1:3,], richness)
+# Rename Column #
+names(rich.all)[4] <- "richness"
+# Pull out two of the five Portal treatments # 
+rich.treat <- rich.all[which(rich.all$plot_type == "Control" | rich.all$plot_type == "Rodent Exclosure"), ]
 
+# Plot data #
+rich.treat.plot <- group_by(rich.treat, plot_type, year) %>% summarise (
+  mean = mean(richness),
+  sd = sd(richness),
+  n = n(),
+  sem = sd/sqrt(n))
+rich.plot <- ggplot(rich.treat.plot, aes(x = year, y = mean, color = plot_type)) + 
+  geom_line(size = 1, show.legend = T) + 
+  geom_errorbar(aes(ymin = mean -sem, ymax = mean + sem), width = 0.1) +
+  xlim(1977, 2002) +
+  xlab("Year") +
+  ylab("Richness") + 
+  scale_color_grey()
+plot(rich.plot)
+
+# Perform RM-ANOVA # 
+rich.rm <- lme(richness ~ plot_type*year, random = ~ 1 | plot_id,
+               correlation = corAR1(form = ~1 | plot_id),
+               data = rich.treat)
+# Look at detailed output # 
+summary(rich.rm)
+# Obtain F-test #
+anova(rich.rm)
+# Make cleaner ANOVA table #
+set.caption("RMANOVA for Portal")
+pander(anova(rich.rm))
+# Use `lsmeans` package for time-corrected marginal means #
+lsmeans(rich.rm, ~plot_type)
 
 ```
 
@@ -223,10 +337,10 @@ b. Is there a noticeable trend in the inverse of Simpson's diversity over time?
 c. What does the result of your F-test tell you? 
 d. Of the three RM-ANOVA models with different covariance structures, which one is best? How does this affect the interpretation of your data?  
 
-> ***Answer 4a***:
-> ***Answer 4b***:
-> ***Answer 4c***:
-
+> ***Answer 4a***: The RM-ANOVA test is used to test the equality of means for data sets when sample measurements are not independent from one another. 
+> ***Answer 4b***: There is a noticable trend of diversity over time, the control treatment diversity generally increased across the years but rodent enclosure treatment diversity remained the same with fluculations. 
+> ***Answer 4c***: The F-test tells me that plot treatment/type is a significant influence over species diversity in the sample plots, next to year, and the interaction of both plot type and year was also significant. 
+> ***Answer 4d***: ???
 ## 6) TEMPORAL BETA DIVERSITY
 
 ### Turnover
@@ -237,7 +351,43 @@ In the R code chunk below, do the following:
 3. Visualize turnover within each group
 
 ```{r}
-
+# Calculate species abundances for each taxonomic group #
+portal.species.abunds <- group_by(portal, year, plot_type) %>% count(taxon)
+# Calculate total turnover # 
+portal.total <- turnover(df = portal.species.abunds,
+                         time.var = "year",
+                         species.var = "taxon",
+                         abundance.var = "n",
+                         replicate.var = "plot_type",
+                         metric = "total")
+# Calculate species gained #
+portal.appearance <- turnover(df = portal.species.abunds,
+                              time.var = "year",
+                              species.var = "taxon",
+                              abundance.var = "n",
+                              replicate.var = "plot_type",
+                              metric = "appearance")
+# Calculate species lost #
+portal.disappearance <- turnover(df = portal.species.abunds,
+                              time.var = "year",
+                              species.var = "taxon",
+                              abundance.var = "n",
+                              replicate.var = "plot_type",
+                              metric = "disappearance")
+# Use join from dplyr to join columns by shared year and plot type colums #
+portal.turnover <- full_join(portal.total, portal.disappearance) %>% full_join(portal.appearance)
+portal.turnover <- gather(portal.turnover, key = metric, 
+                             value = turnover, total, appearance, disappearance)
+turn.plot <- ggplot(
+  portal.turnover, aes(x = year, y = turnover, color = metric)) +
+  geom_line(size = 1, show.legend = T) +
+  facet_wrap(~plot_type, ncol = 1) + 
+  xlim(1977, 2002) + 
+  xlab("Year") + 
+  ylab("Turnover") +
+  theme(legend.position = "Bottom") +
+  scale_color_grey()
+plot(turn.plot)
 
 ```
 
@@ -246,6 +396,9 @@ In the R code chunk below, do the following:
 a. How does temporal turnover relate to spatial turnover?
 b. Which taxonomic group appears to be the most variable? Which group appears to be the least variable?
 
+> ***Answer 5a***: Temporal turnover is the sum of species gained and lost over total species in both time points over a particular space - In other words, it is the change of species composition over time.
+> ***Answer 5b***: The rodent exclosure seems to be the most variable, while the short-term Krat exclosure seems to be the least variable. 
+
 ### Mean Rank Shift
 In the code chunk below, do the following:
 
@@ -253,7 +406,32 @@ In the code chunk below, do the following:
 2. Plot MRS for each through time. 
 
 ```{r}
+# Pull out two treatments we analyzed eariler #
+portal.abunds.cont.rodent <- filter(portal.species.abunds, 
+                                    plot_type == "Control" | plot_type == "Rodent Exclosure")
+# Calculate MRS #
+portal.rankshift <- rank_shift(
+  df = as.data.frame(portal.abunds.cont.rodent),
+  time.var = "year",
+  species.var = "taxon",
+  abundance.var = "n",
+  replicate.var = "plot_type")
+# Replace the year range with a single value to plot #
+portal.rankshift$year <- as.numeric(substr(portal.rankshift$year_pair, 6, 9))
+# Create ggplot #
+rankshift.plot <- ggplot(portal.rankshift, aes(x = year, y = MRS, color = plot_type)) +
+  geom_line(size = 1) + 
+  xlim(1977, 2002) + 
+  xlab("Year") + 
+  ylab("Mean Rank Shift") + 
+  scale_color_grey()
+plot(rankshift.plot) #Interesting, higher mean rank shifting in rodent exclosure #
 
+# Does one plot type show higher or lower MRS on average? Let's find out #
+group_by(portal.rankshift, plot_type) %>% 
+  summarise(
+    mean = mean(MRS),
+    cv = sd(MRS)/mean)
 ```
 
 ***Question 6***:
@@ -261,8 +439,8 @@ In the code chunk below, do the following:
 a. What does a change in the rank shift tell you about the community?
 b. Interpret the analysis and figure you just made.
 
-> ***Answer 6a***:
-> ***Answer 6b***:
+> ***Answer 6a***: A change in the rank shift tells me that commonness and rarity of taxa have changed - The higher the MRS index, the greater the change. 
+> ***Answer 6b***: From the figure and analysis, it is clear that Rodent exclosure treatment experienced greater changes in commonness and rarity of taxa across time. 
 
 ### Rate Change Interval
 In the R code chunk below, do the following:
@@ -271,6 +449,28 @@ In the R code chunk below, do the following:
 2. Plot the results.
 
 ```{r}
+# First calculate the relative abundances #
+# Calculate total abundance and add as column #
+# Relativize species abundances across the whole dataset so the transformed distances are preserved #
+portal.species.abunds$tot.abund <- rep(sum(portal.species.abunds$n),
+                                      length(portal.species.abunds$n))
+# Apply Hellinger transfrmation #
+portal.hellinger.transf <- portal.species.abunds %>%
+  mutate(hellinger.transf = sqrt(n / tot.abund))
+# Use new column as our abundance vector #
+portal.change.int <- rate_change_interval(portal.hellinger.transf,
+                                          time.var = "year",
+                                          species.var = "taxon",
+                                          abundance.var = "hellinger.transf",
+                                          replicate.var = "plot_type")
+rate.plot <- ggplot(portal.change.int, aes(interval, distance)) + 
+  geom_point() +
+  facet_wrap(~plot_type) + 
+  theme(strip.text.x = element_text(size = 7)) +
+  stat_smooth(method = "loess", se = F, size = 1) +
+  ylab("Hellinger Distance") +
+  xlab("Time Interval (Years)")
+rate.plot
 
 ```
 
@@ -279,8 +479,8 @@ In the R code chunk below, do the following:
 a. What does it mean to calculate a distance metric across varying time intervals?
 b. Interpret the overall results. Develop a hypothesis based on the different responses of each treatment.
 
-> ***Answer 7a***:
-> ***Answer 7b***:
+> ***Answer 7a***: To calculate a distance metric across varying time intervals is to see how a community changes over time - To see how a community has diverged. 
+> ***Answer 7b***: Treatments besides the rodent exclosure increased in hellinger distance over time intervals, meaning that communities diverged across time, some faster and some slower. I hypothesize that excluding rodents from communities will prevent community divergence across time because rodent taxa may play the role of a keystone species?
 
 ## 7) STABILITY
 In the R code chunk below, do the following:  
@@ -290,7 +490,65 @@ In the R code chunk below, do the following:
 3. Test for a biodiversity-stability relationship by regressing community stability on mean inverse Simpson's diversity.
 
 ```{r}
+# Calculate stability within each plot type #
+portal.stab <- community_stability(df = as.data.frame(portal.species.abunds),
+                                   time.var = "year",
+                                   abundance.var = "n",
+                                   replicate.var = "plot_type")
+pander(portal.stab)
+# Calculate synchrony for each plot type #
+portal.loreau <- synchrony(df = as.data.frame(portal.species.abunds),
+                           time.var = "year",
+                           species.var = "taxon",
+                           abundance.var = "n",
+                           replicate.var = "plot_type",
+                           metric = "Loreau")
+names(portal.loreau)[2] <- "loreau"
+portal.gross <- synchrony(df = as.data.frame(portal.species.abunds), 
+                          time.var = "year",
+                          species.var = "taxon",
+                          abundance.var = "n",
+                          replicate.var = "plot_type",
+                          metric = "Gross")
+names(portal.gross)[2] <- "gross"
+pander(full_join(portal.loreau, portal.gross))
 
+# Biodiversity-stability relationships #
+# Summarise average annual richness in each plot type # 
+portal.mean.rich.plot <- rich.all %>% 
+  group_by(plot_id) %>% 
+  summarise(mean.rich = mean(richness))
+
+# How does stability metrics relate to mean richness? # 
+portal.plot.abunds <- as.data.frame(
+  group_by(portal, year, plot_id) %>% count(taxon))
+portal.stab.plot <- community_stability(df = portal.plot.abunds,
+                                        time.var = "year",
+                                        abundance.var = "n",
+                                        replicate.var = "plot_id")
+# Join richness and stability #
+portal.div.stab <- portal.mean.rich.plot %>% 
+  inner_join(portal.stab.plot)
+# plot the relationship # 
+par(mar = c(5,5,1,1))
+plot(portal.div.stab$stability ~ portal.div.stab$mean.rich,
+     xlab = "", ylab= "", yaxt = "n", xaxt = "n",
+     lim = c(2,10), ylim = c(1,4))
+axis(side = 1, cex.axis = 1.2, lwd.ticks = 2, las =1)
+axis(side = 2, cex.axis = 1.2, lwd.ticks = 2, las =1)
+axis(side = 3, lwd.ticks = 2, las = 1, labels = F)
+axis(side = 4, lwd.ticks = 2, las = 1, labels = F)
+box(lwd = 2)
+mtext("Mean Richness", side =1, line = 3, cex = 1.5)
+mtext("Aggregate Stability", side =2, line = 3.5, cex = 1.5)
+mtext(expression(paste("(CV"^"-1"," Total Abundance)")),
+      side = 2, line = 2.25, cex = 0.8)
+
+div.stab.lm <- lm(portal.div.stab$stability ~ portal.div.stab$mean.rich)
+abline(div.stab.lm)
+r2 <- bquote(italic(R)^2 == .(format(
+  summary(div.stab.lm)$adj.r.square, digits = 3)))
+text(3.25, 3.75, cex = 1.5, labels = r2)
 
 ```
 
@@ -301,7 +559,7 @@ a. Which plot type has the highest stability in total abundance? How is stabilit
 b. In your own words, describe the concept of synchrony
 c. Interpret the results from the biodiversity-stability relationships you analyzed.
 
-> ***Answer 8a***:
+> ***Answer 8a***: The plot type with the highest stability in total abundance is Control. The stability is measured by taking the variance over the mean value of a 
 > ***Answer 8b***:
 > ***Answer 8c***:
 
