@@ -104,7 +104,6 @@ dplyr::filter(time.by.species, year == 1984)
 dplyr::filter(time.by.species, plot_id == 5)
 # Converting tidyr object into data frame #
 time.by.species <- as.data.frame(time.by.species)
-time.by.species
 
 ## Made site by species matrix for the year 1977 ##
 portal1977 <- subset(time.by.species, year == 1977)
@@ -117,7 +116,6 @@ portal1977 <- portal1977[, -c(1:3)]
 
 ## Analyze alpha diversity across sites ##
 alpha <- rbind(diversity(portal1977[1:23,], index="shannon"))
-alpha
 
 ## Ordination of site by species matrix ##
 # Principal Coordinate Analysis #
@@ -165,8 +163,6 @@ pcoa <- add.spec.scores(pcoa,REL,method = "pcoa.scores")
 text(pcoa$cproj[ ,1], pcoa$cproj[ ,2],
 labels = row.names(pcoa$cproj), col = "black")
 
-
-
 ## Hypothesis testing: Beta-diversity ##
 
 # Run PERMANOVA with adonis function #
@@ -187,7 +183,7 @@ summary(phi)
 a. Does diversity vary among sites? Does this correspond to treatment type?
 b. Is treatment type a significant predictor of site dissimilarity?
 
-> ***Answer 2a***: The alpha diversity of the 23 sites from the 1977 data sites vary between 0.37 and 1.84. And according to the PERMANOVA test I performed, it showed that site treatment significantly (p-value=0.005) affected species distribution across sites. 
+> ***Answer 2a***: The alpha diversity of the 23 sites from the 1977 data sites vary between 0.37 and 1.84. And according to the PERMANOVA test I performed, it showed that site treatment significantly (p-value=0.005) affected species distribution across sites. So the alpha diversity is likely corresponding to treatment type
 > ***Answer 2b***:Yes, treatment type is a significant predictor of site dissimilarity. 
 
 ## 4) TIME SERIES ANALYSIS
@@ -291,7 +287,9 @@ In the R code chunk below, do the following:
 # Constructing time-vy-species matrix #
 time.by.species <- group_by(portal, year, plot_id, plot_type) %>% count(taxon) %>% spread(key = taxon, value = n, fill = 0)
 # Calculate observed richness from time.by.species matrix #
-richness <- as.data.frame(rowSums(time.by.species[,-c(1:3)]))
+# richness <- as.data.frame(rowSums(time.by.species[,-c(1:3)]))
+# Calulate inverse Simpsons diversity from time.by.species matrix #
+richness <- as.data.frame(diversity(time.by.species[,-c(1:3)], index="invsimpson"))
 # Create data frame with experimental design and richness data # 
 rich.all <- data.frame(time.by.species[,1:3,], richness)
 # Rename Column #
@@ -318,15 +316,26 @@ plot(rich.plot)
 rich.rm <- lme(richness ~ plot_type*year, random = ~ 1 | plot_id,
                correlation = corAR1(form = ~1 | plot_id),
                data = rich.treat)
+rich.cmp <- lme(richness ~ plot_type*year, random = ~ 1 | plot_id,
+               correlation = corCompSymm(form = ~1 | plot_id),
+               data = rich.treat)
+# rich.unstr <- lme(richness ~ plot_type*year, random = ~ 1 | plot_id,
+#                correlation = corSymm(form = ~1 | plot_id),
+#                data = rich.treat)
+
 # Look at detailed output # 
 summary(rich.rm)
+summary(rich.cmp)
 # Obtain F-test #
 anova(rich.rm)
+anova(rich.cmp)
 # Make cleaner ANOVA table #
 set.caption("RMANOVA for Portal")
 pander(anova(rich.rm))
+pander(anova(rich.cmp))
 # Use `lsmeans` package for time-corrected marginal means #
 lsmeans(rich.rm, ~plot_type)
+lsmeans(rich.cmp, ~plot_type)
 
 ```
 
@@ -338,9 +347,9 @@ c. What does the result of your F-test tell you?
 d. Of the three RM-ANOVA models with different covariance structures, which one is best? How does this affect the interpretation of your data?  
 
 > ***Answer 4a***: The RM-ANOVA test is used to test the equality of means for data sets when sample measurements are not independent from one another. 
-> ***Answer 4b***: There is a noticable trend of diversity over time, the control treatment diversity generally increased across the years but rodent enclosure treatment diversity remained the same with fluculations. 
-> ***Answer 4c***: The F-test tells me that plot treatment/type is a significant influence over species diversity in the sample plots, next to year, and the interaction of both plot type and year was also significant. 
-> ***Answer 4d***: ???
+> ***Answer 4b***: There is alot of flucuation in the richness (invsimpson) for both control and exclosure treatments, but they behave similarily and seem to not exhibit any noticable trend. 
+> ***Answer 4c***: The F-test tells me that plot treatment/type, year, or the interaction of both year and plot type is not a significant predictor of species diversity.
+> ***Answer 4d***: Of the two F tests I performed using the AR(1) and compound symmetry co variance structures, I found that the compound covariance structure worked the best. This might imply that all distinct samples within a treatment are correlated with one another in our dataset, while a autoregressive co variance structure implies that the weighted sum of past values will affect future values. 
 ## 6) TEMPORAL BETA DIVERSITY
 
 ### Turnover
@@ -557,15 +566,16 @@ text(3.25, 3.75, cex = 1.5, labels = r2)
 a. Which plot type has the highest stability in total abundance? How is stability of total abundance measured with the function you learned? How does this measure of stability relate to the coefficient of variation?
 
 b. In your own words, describe the concept of synchrony
+
 c. Interpret the results from the biodiversity-stability relationships you analyzed.
 
-> ***Answer 8a***: The plot type with the highest stability in total abundance is Control. The stability is measured by taking the variance over the mean value of a 
-> ***Answer 8b***:
-> ***Answer 8c***:
+> ***Answer 8a***: The plot type with the highest stability in total abundance is Control. The stability is the inverse of taking the variance over the mean value of a community.
+> ***Answer 8b***: Synchrony is a measure of independence in population density fluctuation.
+> ***Answer 8c***: It shows that as mean richness increases, the aggregate stability postivity increases. 
 
 ## SYNTHESIS
 Compare and contrast the core concepts from temporal and spatial diversity (e.g., autocorrelation, scale, variability, etc.).
 Identify a few of the major challenges associated with studying biodiversity through time and across space.  
 
 > ***Answer***:
-
+It seems that the biggest challenges assoicated with studying biodiversity through time and space is the issue of independence. Making sure to account for the fact that measurements of samples throughout small space or short time point are not independent to one another. For example: partitioning out the effect of enviroment and spatial autocorrleation (spatial diversity), or factoring in stationarity assumptions, variability, and lag time (temporal diversity). Generally, it seems that in both temperal and spatial diversity, partitioning out the autocorrelation of time and space and considering the variability and seasonality is important for determining species turnover (beta diversity).   
