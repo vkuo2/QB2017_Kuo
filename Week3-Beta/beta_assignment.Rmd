@@ -235,7 +235,7 @@ gplots::heatmap.2(as.matrix(fish), distfun = function(x) vegdist(x, method = "br
 
 ***Question 6***: Based on cluster analyses and the introductory plots that we generated after loading the data, develop an ecological hypothesis for fish diversity the `doubs` data set? 
 
-> ***Answer 6***: 
+> ***Answer 6***: I predict that since some sites are more dissimilar than others, the differences may be due to enviromental quality differences. If so, then the presences and abundances of certain fish species in some sites but not other sites is indicative of enviromental senstitivity of fish species.  
 
 ### C.  Ordination
 
@@ -542,6 +542,8 @@ mtext("Variation Partitioning of\nDoubs Fish Diversity", side = 3, line = -3)
 ## SYNTHESIS
 Load the dataset you are using for your project. Perform an ordination to visualize your dataset.  Using this ordination, develop some hypotheses relevant to $\beta$-diversity and identify the appropriate tools you would use to test them.
 
+```{r} 
+
 rm(list = ls())
 setwd("C:/Users/Venus/Github/QB2017BenavidezKuo/data")
 
@@ -622,5 +624,6 @@ points(BCI.1982.pcoa$points[ ,1], BCI.1982.pcoa$points[ ,2],
 text(BCI.1982.pcoa$points[ ,1], BCI.1982.pcoa$points[ ,2],
      labels = row.names(BCI.1982.pcoa$points))
 
-# The two PCoAs look nearly identical. We are rethinking our project dataset 
+# The two PCoAs look nearly identical. We are rethinking our project dataset to incorporate 50 ha plots from other continents. #
 
+```
