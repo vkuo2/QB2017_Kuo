@@ -1,6 +1,6 @@
 ---
 title: "Phylogenetic Diversity - Traits"
-author: "Student Name; Z620: Quantitative Biodiversity, Indiana University"
+author: "Venus Kuo; Z620: Quantitative Biodiversity, Indiana University"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
 geometry: margin=2.54cm
@@ -45,7 +45,19 @@ In the R code chunk below, provide the code to:
 4. load all of the required R packages (be sure to install if needed).  
 
 ```{r}
+# Set working directory #
+rm(list = ls())
+getwd() 
+#setwd("C:/Users/Venus/Github/QB2017_Kuo/Week6-PhlyTraits/")
+setwd("/Users/vkuo/GitHub/QB2017_Kuo/Week6-PhyloTraits/")
 
+# Require or install packages #
+package.list <- c('ape', 'seqinr', 'phylobase', 'adephylo', 'geiger', 'picante', 'stats', 'RColorBrewer', 'caper', 'phylolm', 'pmc', 'ggplo2', 'tidyr', 'dplyr', 'phangorn', 'pander') 
+for (package in package.list) {
+  if (!require(package, character.only=T, quietly=T)) { 
+    install.packages(package)
+    library(package, character.only=T)
+} }
 
 ```
 
@@ -61,7 +73,7 @@ In this exercise, we will take a phylogenetic approach to mapping phosphorus res
 ***Question 1***: Using less or your favorite text editor, compare the `p.isolates.fasta` file and the `p.isolates.afa` file. 
 Describe the differences that you observe between the files. 
 
-> ***Answer 1***: 
+> ***Answer 1***: The p.isolates.fasta shows the raw base pair sequences of each isolate, while the p.isolates.afa shows the base pair sequence insertations and deletion differences between each isolate sequence region
 
 In the R code chunk below, do the following:
 1. read your alignment file,
@@ -70,7 +82,23 @@ In the R code chunk below, do the following:
 4. plot the alignment using a grid to visualize rows of sequences.
 
 ```{r}
+# Performing Alignment #
+# muscle -in ./data/p.isolates.fasta -out ./data/p.isolates.afa # In bash terminal
 
+# Read Alignment File #
+read.aln <- read.alignment(file = "./data/p.isolates.afa", format = "fasta")
+
+# Convert Alignment file to DNAbin Object #
+p.DNAbin <- as.DNAbin(read.aln)
+
+# Identify Base Pair Region of 16S rRNA Gene to Visualize #
+window <- p.DNAbin[, 100:500]
+
+# Command to visualize sequence alignment #
+image.DNAbin(window, cex.lab = 0.50)
+
+# Adds grid to help visualize rows of sequences #
+grid(ncol(window), nrow(window), col="lightgrey")
 
 ```
 
@@ -78,10 +106,10 @@ In the R code chunk below, do the following:
 Move along the alignment by changing the values in the `window` object. 
 
 a. Approximately how long are our reads?  
-b. What regions do you think would are appropriate for phylogenetic inference and why?  
+b. What regions do you think are appropriate for phylogenetic inference and why?  
 
-> ***Answer 2a***:   
-> ***Answer 2b***:  
+> ***Answer 2a***:   Our reads are approximately 400 bp in length.
+> ***Answer 2b***:   The variable region is probably the most appropiate for phylogenetic inference becuase it would show the strongest difference in phylogentic signal. 
 
 ## 4) MAKING A PHYLOGENETIC TREE
 
@@ -97,6 +125,23 @@ In the R code chunk below, do the following:
 4. plot the rooted tree. 
 
 ```{r}
+# Create Distance Matri with "raw" model #
+seq.dist.raw <- dist.dna(p.DNAbin, model = "raw", pairwise.deletion = FALSE)
+
+# Neighbor Joining Algorithm to construct tree, a phylo # 
+# Object {ape} # 
+nj.tree <- bionj(seq.dist.raw)
+
+# Identify Outgroup Sequence #
+outgroup <- match("Methanosarcina", nj.tree$tip.label)
+# Root the Tree {ape} # 
+nj.rooted <- root(nj.tree, outgroup, resolve.root = TRUE)
+# Plot the rooted tree with ape #
+par(mar = c(1,1,2,1)+0.1)
+plot.phylo(nj.rooted, main = "neighbor Joining Tree", "phylogram",
+           use.edge.length = FALSE, direction = "right", cex = 0.6,
+           label.offset = 1)
+add.scale.bar(cex = 0.7)
 
 
 ```
@@ -117,7 +162,38 @@ In the R code chunk below, do the following:
 4. create a cophylogenetic plot to compare the topologies of the trees.
 
 ```{r}
+# Create distance matrix with F84 model #
+seq.dist.F84 <- dist.dna(p.DNAbin, model = "F84", pairwise.deletion = FALSE)
 
+# Plot distances from different DNA substitution Models # 
+par(mar = c(5,5,2,1)+0.1)
+plot(seq.dist.raw, seq.dist.F84,
+     pch=20, col="red", las = 1, asp = 1, xlim=c(0,0.7), ylim=c(0,0.7),
+     xlab = "Raw Distance", ylab = "F84 Distance")
+abline(b=1, a=0, lty=2)
+text(0.65, 0.6, "1:1")
+
+# Make Neighbor Joining Trees Usng Different DNA Substitution Models #
+raw.tree <- bionj(seq.dist.raw)
+F84.tree <- bionj(seq.dist.F84)
+
+# Define Outgroups # 
+raw.outgroup <- match("Methanosarcina", raw.tree$tip.label)
+F84.outgroup <- match("Methanosarcina", F84.tree$tip.label)
+
+# Root the tree # 
+raw.rooted <- root(raw.tree, raw.outgroup, resolve.root=TRUE)
+F84.rooted <- root(F84.tree, F84.outgroup, resolve.root=TRUE)
+
+# Make Cophylogenetic Plot #
+layout(matrix(c(1,2), 1,2), width=c(1,1))
+par(mar = c(1,1,2,0))
+plot.phylo(raw.rooted, type="phylogram", direction = "right", show.tip.label=TRUE,
+           use.edge.length=FALSE, adj=0.5, cex = 0.6, label.offset = 2, main="Raw")
+
+par(mar = c(1,0,2,1))
+plot.phylo(F84.rooted, type="phylogram", direction = "left", show.tip.label = TRUE,
+           use.edge.length = FALSE, adj = 0.5, cex = 0.6, label.offset = 2, main="F84")
 
 ```
 
@@ -129,7 +205,39 @@ In the R code chunk below, do the following:
 5. be sure to format, add appropriate labels, and customize each plot.
 
 ```{r}
+# Choose Jukes-Cantor model #
+# Create distance matrix #
+seq.dist.jc69 <- dist.dna(p.DNAbin, model = "JC69", pairwise.deletion = FALSE)
 
+# Plot distances from different DNA substitution Models # 
+par(mar = c(5,5,2,1)+0.1)
+plot(seq.dist.raw, seq.dist.jc69,
+     pch=20, col="red", las = 1, asp = 1, xlim=c(0,0.7), ylim=c(0,0.7),
+     xlab = "Raw Distance", ylab = "jc69 distance")
+abline(b=1, a=0, lty=2)
+text(0.65, 0.6, "1:1")
+
+# Make Neighbor Joining Trees Usng Different DNA Substitution Models #
+raw.tree <- bionj(seq.dist.raw)
+jc69.tree <- bionj(seq.dist.jc69)
+
+# Define Outgroups # 
+raw.outgroup <- match("Methanosarcina", raw.tree$tip.label)
+jc69.outgroup <- match("Methanosarcina", jc69.tree$tip.label)
+
+# Root the tree # 
+raw.rooted <- root(raw.tree, raw.outgroup, resolve.root=TRUE)
+F84.rooted <- root(F84.tree, F84.outgroup, resolve.root=TRUE)
+
+# Make Cophylogenetic Plot #
+layout(matrix(c(1,2), 1,2), width=c(1,1))
+par(mar = c(1,1,2,0))
+plot.phylo(raw.rooted, type="phylogram", direction = "right", show.tip.label=TRUE,
+           use.edge.length=FALSE, adj=0.5, cex = 0.6, label.offset = 2, main="Raw")
+
+par(mar = c(1,0,2,1))
+plot.phylo(F84.rooted, type="phylogram", direction = "left", show.tip.label = TRUE,
+           use.edge.length = FALSE, adj = 0.5, cex = 0.6, label.offset = 2, main="F84")
 
 ```
 
