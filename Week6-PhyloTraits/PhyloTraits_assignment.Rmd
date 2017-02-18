@@ -483,11 +483,20 @@ rownames(p.phylosignal) <- c("K", "PIC.var.obs" , "PIC.var.mean",
                              "PIC.var.P", "PIC.var.z", "PIC.P.BH")
 # Use a for loop to calculate bloomberg's K for each resource # 
 for(i in 1:18) {
-  x <- as.matrix()
+  x <- as.matrix(p.growth.std[ ,i, drop=FALSE])
+  out <- phylosignal(x, nj.rooted)
+  p.phylosignal[1:5, i] <- round(t(out), 3)
 }
 
+# Use the BH dorrection on p-value #
+p.phylosignal[6, ] <- round(p.adjust(p.phylosignal[4, ], method = "BH"), 3)
 
+# Calculate Phylogenetic signal for niche breadth # 
+signal.nb <- phylosignal(nb, nj.rooted)
+signal.nb
 
+signal.p <- phylosignal(x, nj.rooted)
+signal.p
 ```
 
 ***Question 8***: Using the K-values and associated p-values (i.e., "PIC.var.P"") from the `phylosignal` output, answer the following questions:
@@ -495,8 +504,8 @@ for(i in 1:18) {
 a.  Is there significant phylogenetic signal for niche breadth or standardized growth on any of the phosphorus resources?  
 b.  If there is significant phylogenetic signal, are the results suggestive of clustering or overdispersion?  
 
-> ***Answer 8a***:   
-> ***Answer 8b***:   
+> ***Answer 8a***:   There is not phylogenetic signal for niche breadth (~0.1) or for phosphorus resource use (0.077).
+> ***Answer 8b***:   If there is a phlogenetic signal then the results would suggest clustering of either niche breadth or phosphorus use because the traits are conserved based on phylogeny. 
 
 ### C.  Calculate Dispersion of a Trait
 
@@ -507,6 +516,21 @@ In the R code chunk below, do the following:
 4. use `phylo.d()` to calculate *D* on at least three phosphorus traits.
 
 ```{r}
+# Turn continuous growth data into categorical data #
+p.growth.pa <- as.data.frame((p.growth > 0.01)*1)
+
+# Look at phosphorus use for each resource # 
+apply(p.growth.pa, 2, sum)
+
+# Add names column to data # 
+p.growth.pa$name <- rownames(p.growth.pa)
+
+# Merge Traits and Phylogenetic Data # 
+p.traits <- comparative.data(nj.rooted, p.growth.pa, "name")
+phylo.d(p.traits, binvar = AEP)
+phylo.d(p.traits, binvar = PhenylCP)
+phylo.d(p.traits, binvar = DNA)
+phylo.d(p.traits, binvar = cAMP)
 
 
 ```
@@ -517,9 +541,9 @@ a.  Choose three phosphorus growth traits and test whether they are significantl
 b.  How do these results compare the results from the Blomberg's K analysis?  
 c.  Discuss what factors might give rise to differences between the metrics.  
 
-> ***Answer 9a***:  
-> ***Answer 9b***:  
-> ***Answer 9c***:  
+> ***Answer 9a***:  I chose AEP, PhenylCP and cAMP growth traits and the D values were 0.19, 0.67, and -0.11 respectively. It appears the cAMP and AEP phosphorus growth traits are clustered, while PhenylCP trait is overdispersed. 
+> ***Answer 9b***:  These results suggests that there is a phylogenetic signal with taxa phosphorus traits, but the Blomberg's K analysis suggests that there isn't a phylogenetic signal.    
+> ***Answer 9c***:  Blomberg's K quantifies phylogentic singal by compairing observed trait distribution on a tree to what would evolve randomly (Brownian's motion). While dispersion (D) is a measure of how traits are actually dispersed in the tree. Perhaps Blomberg's K is a bit more rigorous of a phylogeny signal test than dispersion measurement. 
 
 ## 7) PHYLOGENETIC REGRESSION
 
@@ -529,6 +553,41 @@ In the R code chunk below, do the following:
 2. Fit a phylogenetic regression to the trait dataset, taking into account the mammal supertree
 
 ```{r}
+# Input the tree and dataset # 
+mammal.Tree <- read.tree("./data/mammal_best_super_tree_fritz2009.tre")
+mammal.data <- read.table("./data/mammal_BMR.txt", 
+                          header = TRUE)
+# Select the variables we want to analyse # 
+mammal.data <- mammal.data[, c("Species", "BMR_.mlO2.hour.",
+                               "Body_mass_for_BMR_.gr.")]
+mammal.species <- array(mammal.data$Species)
+# Select the tips in the mammal tree that are also in the dataset # 
+pruned.mammal.tree <- drop.tip(mammal.Tree, mammal.Tree$tip.label[-na.omit(match(mammal.species, mammal.Tree$tip.label))])
+# Select the species from the dataset that are in our prunned tree # 
+pruned.mammal.data <- mammal.data[mammal.data$Species %in% pruned.mammal.tree$tip.label, ]
+# Turn column of species names into rownames # 
+rownames(pruned.mammal.data) <- pruned.mammal.data$Species
+
+# Run simple linear regression # 
+fit <- lm(log10(BMR_.mlO2.hour.) ~ log10(Body_mass_for_BMR_.gr.),
+          data = pruned.mammal.data)
+plot(log10(pruned.mammal.data$Body_mass_for_BMR_.gr.), log10(pruned.mammal.data$BMR_.mlO2.hour.),
+     las = 1, xlab = "Body mass (kg), log", ylab = "Basal Metabolic Rate (BMR), log")
+abline(a = fit$coefficients[1], b = fit$coefficients[2])
+b1 <- round(fit$coefficients[2], 3)
+eqn <- bquote(italic(z) == .(b1))
+# Plot the slope # 
+text(0.5, 4.5, eqn, pos = 4)
+
+# Run phylogeny-corrected regression with no bootstrap replicates # 
+fit.phy <- phylolm(log10(BMR_.mlO2.hour.) ~ log10(Body_mass_for_BMR_.gr.),
+          data = pruned.mammal.data, pruned.mammal.tree, model = "lambda", boot=0)
+plot(log10(pruned.mammal.data$Body_mass_for_BMR_.gr.), log10(pruned.mammal.data$BMR_.mlO2.hour.),
+     las=1, xlab="Body mass (kg), log", ylab = "Basal Metabolic Rate (BMR), log")
+abline(a = fit.phy$coefficients[1], b = fit.phy$coefficients[2])
+b1.phy <- round(fit.phy$coefficients[2], 3)
+eqn <- bquote(italic(z) == .(b1.phy))
+text(0.5, 4.5, eqn, pos = 4)
 
 
 ```
@@ -539,10 +598,10 @@ b. How does a phylogenetic regression differ from a standard linear regression?
 c. Interpret the slope and fit of each model. Did accounting for shared evolutionary history improve or worsten the fit?
 d. Try to come up with a scenario where the relationship between two variables would completely disappear when the underlying phylogeny is accounted for.
 
-> ***Answer 10a***:  
-> ***Answer 10b***:  
-> ***Answer 10c***:  
-> ***Answer 10d***:  
+> ***Answer 10a***:  We need to correct for shared evolutionary history because the variables (species) are not independent to each other due to shared evolutionary history. 
+> ***Answer 10b***:  Phylogenetic regression describes the variance of residual errors as a covariance matrix that takes in account the branch lengths of the phylogenetic tree (distance of relatedness). While the standard linear regression, the residual errors of the variables are assumed to be independent and identically distributed random variables that follow a normal distribution. 
+> ***Answer 10c***:  Incorporating the shared evolutionary history improved the fit by a z-score of ~0.02.
+> ***Answer 10d***:  Perhaps if we were looking at the relationship between body mass of many animals (mammals, lizards, and birds) and latitude.  
 
 
 ## 7) SYNTHESIS
@@ -562,7 +621,25 @@ tradeoff <- data.frame(nb,umax,lake) # make new data frame
 D <- (lake == "LL") * 1
 fit<-lm(log10(umax) ~ nb + D + nb * D)
 
+## LL Lake # 
+plot(log10(tradeoff$NB), log10(tradeoff$umax),las = 1, ylab = "Niche Breadth", xlab= "Maximum growth rate" ,
+      main="Little Long Lake")
+abline(a = fit$coefficients[1], b = fit$coefficients[2])
+b1 <- round(fit$coefficients[2], 3)
+eqn <- bquote(italic(z) == .(b1))
+# Plot the slope # 
+text(-0.65, 0.25, eqn, pos = 4)
 
+K <- (lake == "WG") * 1 
+fit<-lm(log10(umax) ~ nb + K + nb * K)
+
+plot( log10(tradeoff$NB), log10(tradeoff$umax), las = 1, ylab = "Niche Breadth", xlab= "Maximum growth rate",
+      main="Wintergreen Lake")
+abline(a = fit$coefficients[1], b = fit$coefficients[2])
+b1 <- round(fit$coefficients[2], 3)
+eqn <- bquote(italic(z) == .(b1))
+# Plot the slope # 
+text(-0.65, 0.25, eqn, pos = 4)
   
 
 ```
@@ -570,6 +647,6 @@ fit<-lm(log10(umax) ~ nb + D + nb * D)
 ***Question 11***: Based on your knowledge of the traits and their phylogenetic distributions, what conclusions would you draw about our data and the evidence for a generalist-specialist tradeoff? 
 
 
-> ***Answer 11***:
+> ***Answer 11***: There are some evidence to support both the hypthesis that phosphorus use trait is phylogenetically clustered and overdispersed. I would say that based on the phylogeny tests that phosphorus traits are more overdispersed than clustered and that there isn't a strong generalists-specialists tradeoff based off of the niche breadth and maximum growth rate linear regression. 
 
 
