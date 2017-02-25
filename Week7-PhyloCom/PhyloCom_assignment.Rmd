@@ -1,6 +1,6 @@
 ---
 title: "Phylogenetic Diversity - Communities"
-author: "Student Name; Z620: Quantitative Biodiversity, Indiana University"
+author: "Venus Kuo ; Z620: Quantitative Biodiversity, Indiana University"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
 geometry: margin=2.54cm
@@ -41,16 +41,21 @@ In the R code chunk below, provide the code to:
 5. load the required R source file.
 
 ```{r}
+# Set working directory #
+rm(list = ls())
+getwd() 
+#setwd("C:/Users/Venus/Github/QB2017_Kuo/")
+setwd("/Users/vkuo/GitHub/QB2017_Kuo/Week7-PhyloCom//")
 
-
-
-
-
-
-
-
-
-
+# Require or install packages #
+package.list <- c('picante', 'ape', 'seqinr', 'vegan', 'fossil', 'simba') 
+for (package in package.list) {
+  if (!require(package, character.only=T, quietly=T)) { 
+    install.packages(package)
+    library(package, character.only=T)
+  } }
+# Load Source Code # 
+source("./bin/MothurTools.R")
 ```
 
 ## 2) DESCRIPTION OF DATA
@@ -70,12 +75,22 @@ In the R code chunk below, do the following:
 6. load the taxonomic data using the `read.tax()` function from the source-code file.
 
 ```{r}
-
-
-
-
-
-
+# Load Enviromental data for Brown County Ponds #
+env <- read.table("data/20130801_PondDataMod.csv", sep = ",", header = TRUE)
+env <- na.omit(env)
+# Load site-by-species matrix # 
+comm <- read.otu(shared = "./data/INPonds.final.rdp.shared", cutoff = "1")
+# Subset data to include only DNA-based identification # 
+comm <- comm[grep("*-DNA", rownames(comm)), ]
+# Perform replacement of all matches with 'gsub()' #
+rownames(comm) <- gsub("\\-DNA", "", rownames(comm))
+rownames(comm) <- gsub("\\_", "", rownames(comm))
+# Remove unnecessary OTUs and sites in the site-by-species # 
+comm <- comm[rownames(comm) %in% env$Sample_ID, ]
+# Remove zero abundance OTUs from data set # 
+comm <- comm[ , colSums(comm) > 0]
+# Load the taxonomic data using the read.tax() # 
+tax <- read.tax(taxonomy = "./data/INPonds.final.rdp.1.cons.taxonomy")
 
 ```
 
@@ -91,15 +106,29 @@ Next, in the R code chunk below, do the following:
 9. plot the rooted tree.
 
 ```{r}
-
-
-
-
-
-
-
-
-
+# Load the FASTA alignment for the bacterial operational taxonomic units # 
+ponds.cons <- read.alignment(file = "./data/INPonds.final.rdp.1.rep.fasta", format = "fasta")
+# Rename the OTUs by removing everything before the tab and after the bar # 
+ponds.cons$nam <- gsub("\\|.*$", "", gsub("^.*?\t", "", ponds.cons$nam))
+# Import the outgroup fasta file # 
+outgroup <- read.alignment(file = "./data/methanosarcina.fasta", format = "fasta")
+# Convert alignment file to DNAbin # 
+DNAbin <- rbind(as.DNAbin(outgroup), as.DNAbin(ponds.cons))
+# Visualize alignment # 
+image.DNAbin(DNAbin, show.labels = T, cex.lab = 0.05, las = 1)
+# Use alignment with outgroup, pick DNA substitution model, and create a phylogenetic distance matrix # 
+seq.dist.jc <- dist.dna(DNAbin, model = "JC", pairwise.deletion = FALSE)
+# Make a neighbor-joining tree file # 
+phy.all <- bionj(seq.dist.jc)
+# Remove tips that are not in community data set # 
+phy <- drop.tip(phy.all, phy.all$tip.label[!phy.all$tip.label %in% c(colnames(comm), "Methanosarcina")])
+# Identify outgroup sequence # 
+outgroup <- match("Methanosarcina", phy$tip.label)
+# Root the tree # 
+phy <- root(phy, outgroup, resolve.root = TRUE)
+# Plot the rooted tree # 
+par(mar = c(1,1,2,1)+0.1)
+plot.phylo(phy, main = "Neighbor Joining Tree", "phylogram", show.tip.label = FALSE, use.edge.length = FALSE, direction = "right", cex = 0.6, label.offset = 1)
 ```
 
 ## 4) PHYLOGENETIC ALPHA DIVERSITY
@@ -109,8 +138,8 @@ In the R code chunk below, do the following:
 1. calculate Faith's D using the `pd()` function.
 
 ```{r}
-
-
+# Calculate Faith's D using pd() # 
+pd <- pd(comm, phy, include.root = FALSE)
 ```
 
 In the R code chunk below, do the following:  
@@ -119,11 +148,19 @@ In the R code chunk below, do the following:
 3. calculate the scaling exponent. 
 
 ```{r}
+# Plot species richness versus phylogenetic diversity (PD) # 
+par(mar = c(5,5,4,1)+0.1)
+plot(log(pd$S), log(pd$PD),
+     pch = 20, col = "red", las = 1,
+     xlab = "ln(S)", ylab = "ln(PD)", cex.main = 1, 
+     main = "Phylodiversity (PD) vs. Taxonomic richness (S)")
 
-
-
-
-
+# Test of power-law relationship and add trendline # 
+fit <- lm('log(pd$PD) ~ log(pd$S)')
+abline(fit, col = "red", lw = 2)
+exponent <- round(coefficients(fit)[2], 2)
+legend("topleft", legend = paste("Scaling exponent = ", exponent, sep = ""),
+       bty = "n", lw = 2, col = "red")
 ```
 
 ***Question 1***: Answer the following questions about the PD-S pattern.    
@@ -143,10 +180,10 @@ In the R code chunk below, do the following:
 1. estimate the standardized effect size of PD using the `richness` randomization method.  
 
 ```{r}
-
-
-
-
+# Estimate the standardized effect size of PD using the richness randomization method # 
+ses.pd <- ses.pd(comm[1:2,], phy, null.model = "richness", runs = 25,
+                 include.root = FALSE)
+ses.pd
 ```
 
 ***Question 2***: Using `help()` and the table above, run the `ses.pd()` function using two other null models and answer the following questions:
@@ -166,8 +203,8 @@ In the R code chunk below, do the following:
 1. calculate the phylogenetic resemblance matrix for taxa in the Indiana ponds data set.
 
 ```{r}
-
-
+# Calculate phylogenetic distance matrix ('picante') # 
+phydist <- cophenetic.phylo(phy)
 ```
 
 **ii.  Net Relatedness Index (NRI)**
@@ -176,12 +213,14 @@ In the R code chunk below, do the following:
 1. Calculate the NRI for each site in the Indiana ponds data set. 
 
 ```{r}
-
-
-
-
-
-
+# Calculate the NRI for each site in the IN ponds data set # 
+# Estimate standardized effect size of NRI via randomization # 
+ses.mpd <- ses.mpd(comm, phydist, null.model = "taxa.labels",
+                   abundance.weighted = FALSE, runs = 25)
+# calculate NRI # 
+NRI <- as.matrix(-1 * ((ses.mpd[,2] - ses.mpd[,3]) / ses.mpd[,4]))
+rownames(NRI) <- row.names(ses.mpd)
+colnames(NRI) <- "NRI"
 ```
 
 **iii.  Nearest Taxon Index (NTI)**
@@ -190,9 +229,14 @@ In the R code chunk below, do the following:
 1. Calculate the NTI for each site in the Indiana ponds data set. 
 
 ```{r}
+# Estimate standardied effect size of NRI via randomization # 
+ses.mntd <- ses.mntd(comm, phydist, null.model = "taxa.labels", 
+                     abundance.weighted = FALSE, runs = 25)
+# Calculate NTI # 
+NTI <- as.matrix(-1 * ((ses.mntd[,2] - ses.mntd[,3]) / ses.mntd[,4]))
 
-
-
+rownames(NTI) <- row.names(ses.mntd)
+colnames(NTI) <- "NTI"
 ```
 
 ***Question 3***: 
@@ -217,9 +261,11 @@ In the R code chunk below, do the following:
 2. calculate the phylogenetically based community resemblance matrix using UniFrac distance.
 
 ```{r}
-
-
-
+# Mean pairwise distance # 
+dist.mp <- comdist(comm, phydist)
+# Unifrac Distance # 
+dist.uf <- unifrac(comm, phy)
+# Compare mean pair distance and unifrac distance matrices # 
 
 ```
 
